@@ -26,7 +26,8 @@ export const authOptions: NextAuthOptions = {
             plan:        user.plan        as string,
             plan_status: user.plan_status as string,
           };
-        } catch {
+        } catch (err) {
+          console.error("[auth] authorize error:", err);
           return null;
         }
       },

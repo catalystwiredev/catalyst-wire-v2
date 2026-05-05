@@ -70,7 +70,7 @@ export async function getUserByEmail(email: string): Promise<UserRecord | null> 
   return new Promise((resolve, reject) => {
     let user: UserRecord | null = null;
     const req = new Request(
-      `SELECT TOP 1 id, email, password_hash, name, user_plan AS plan, plan_status, plan_interval, stripe_customer_id, stripe_subscription_id FROM Users WHERE email = @email`,
+      `SELECT TOP 1 id, email, password_hash, name, user_plan AS [plan], plan_status, plan_interval, stripe_customer_id, stripe_subscription_id FROM Users WHERE email = @email`,
       (err) => { conn.close(); if (err) reject(err); else resolve(user); }
     );
     req.addParameter("email", TYPES.NVarChar, email.toLowerCase().trim());
@@ -84,7 +84,7 @@ export async function getUserById(id: string): Promise<UserRecord | null> {
   return new Promise((resolve, reject) => {
     let user: UserRecord | null = null;
     const req = new Request(
-      `SELECT TOP 1 id, email, name, user_plan AS plan, plan_status, plan_interval, stripe_customer_id, stripe_subscription_id FROM Users WHERE id = @id`,
+      `SELECT TOP 1 id, email, name, user_plan AS [plan], plan_status, plan_interval, stripe_customer_id, stripe_subscription_id FROM Users WHERE id = @id`,
       (err) => { conn.close(); if (err) reject(err); else resolve(user); }
     );
     req.addParameter("id", TYPES.UniqueIdentifier, id);
