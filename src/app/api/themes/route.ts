@@ -1,0 +1,90 @@
+import { NextResponse } from "next/server";
+import { getQuote } from "@/lib/data/alpha-vantage";
+
+export const runtime = "nodejs";
+export const revalidate = 3600;
+
+interface ThemeDefinition {
+  name:        string;
+  slug:        string;
+  tickers:     string[];
+  description: string;
+}
+
+const THEMES: ThemeDefinition[] = [
+  { name: "AI & Machine Learning", slug: "ai",       tickers: ["NVDA","MSFT","GOOG","META","AMD","PLTR"],     description: "Artificial intelligence infrastructure, software, and compute plays." },
+  { name: "Biotech",               slug: "biotech",  tickers: ["MRNA","BIIB","REGN","VRTX","ILMN","CRSP"],    description: "Genomics, mRNA platforms, and next-gen drug development." },
+  { name: "Defense",               slug: "defense",  tickers: ["LMT","RTX","NOC","GD","BA","KTOS"],           description: "Aerospace, defense contractors, and next-gen weapons systems." },
+  { name: "Electric Vehicles",     slug: "ev",       tickers: ["TSLA","RIVN","LCID","NIO","LI","XPEV"],       description: "EV manufacturers and next-gen mobility companies." },
+  { name: "Clean Energy",          slug: "energy",   tickers: ["NEE","ENPH","SEDG","FSLR","RUN","PLUG"],      description: "Solar, wind, and clean energy infrastructure." },
+  { name: "Crypto Equities",       slug: "crypto",   tickers: ["COIN","MARA","RIOT","MSTR","CLSK","HUT"],     description: "Bitcoin miners, exchanges, and crypto-native public companies." },
+  { name: "Cybersecurity",         slug: "cybersec", tickers: ["CRWD","PANW","ZS","FTNT","S","OKTA"],         description: "Zero-trust, endpoint, and cloud security platforms." },
+  { name: "Space & Aviation",      slug: "space",    tickers: ["RKLB","ASTS","ACHR","JOBY","SPCE","LUNR"],    description: "Commercial space launch, satellite, and advanced air mobility." },
+];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function GET() {
+  try {
+    // Collect all unique tickers across themes
+    const allTickers: string[] = [];
+    for (const theme of THEMES) {
+      for (const ticker of theme.tickers) {
+        if (!allTickers.includes(ticker)) {
+          allTickers.push(ticker);
+        }
+      }
+    }
+
+    // Fetch sequentially with 200ms delay to respect Alpha Vantage rate limits
+    const quoteMap = new Map<string, number | null>();
+    for (let i = 0; i < allTickers.length; i++) {
+      if (i > 0) await sleep(200);
+      const ticker = allTickers[i];
+      try {
+        const q = await getQuote(ticker);
+        quoteMap.set(ticker, q ? q.changePct : null);
+      } catch {
+        quoteMap.set(ticker, null);
+      }
+    }
+
+    const themes = THEMES.map((theme) => {
+      const changes: number[] = [];
+      let topMover    = "";
+      let topMoverPct = 0;
+
+      for (const ticker of theme.tickers) {
+        const pct = quoteMap.get(ticker);
+        if (pct !== null && pct !== undefined) {
+          changes.push(pct);
+          if (Math.abs(pct) > Math.abs(topMoverPct)) {
+            topMover    = ticker;
+            topMoverPct = pct;
+          }
+        }
+      }
+
+      const avgChange1d = changes.length > 0
+        ? parseFloat((changes.reduce((a, b) => a + b, 0) / changes.length).toFixed(2))
+        : 0;
+
+      return {
+        name:        theme.name,
+        slug:        theme.slug,
+        tickers:     theme.tickers,
+        description: theme.description,
+        avgChange1d,
+        topMover,
+        topMoverPct: parseFloat(topMoverPct.toFixed(2)),
+      };
+    });
+
+    return NextResponse.json({ themes, generated: new Date().toISOString() });
+  } catch (err) {
+    console.error("[api/themes]", err);
+    return NextResponse.json({ themes: [], generated: new Date().toISOString(), error: "Failed to fetch theme data" });
+  }
+}
