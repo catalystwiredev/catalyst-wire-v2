@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   // applicationinsights uses dynamic requires that bundlers can't trace statically
   serverExternalPackages: ["applicationinsights", "tedious"],
 
+  output: "standalone",
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**.githubusercontent.com" },
