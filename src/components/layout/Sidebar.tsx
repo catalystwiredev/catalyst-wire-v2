@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Zap, FileText, BarChart2, UserCheck, Landmark, FlaskConical, Newspaper, ScanLine, Calendar, TrendingUp, LogIn, Heart, Search, Menu, X, ChevronRight, Star, GraduationCap } from "lucide-react";
+import { Home, Zap, FileText, BarChart2, UserCheck, Landmark, FlaskConical, Newspaper, ScanLine, Calendar, TrendingUp, LogIn, Heart, Search, Menu, X, ChevronRight, Star, GraduationCap, Calculator, BookOpen, Bookmark } from "lucide-react";
 
 const NAV = [
   { label:"Platform", items:[
-    { href:"/", label:"Home", icon:Home },
+    { href:"/",          label:"Home",      icon:Home },
+    { href:"/watchlist", label:"Watchlist", icon:Bookmark },
   ]},
   { label:"Market Data", items:[
     { href:"/live-catalysts",       label:"Live Catalysts",      icon:Zap,          live:true },
@@ -21,12 +22,16 @@ const NAV = [
     { href:"/calendars", label:"Calendars",     icon:Calendar },
     { href:"/themes",    label:"Themes",        icon:TrendingUp },
   ]},
+  { label:"Tools", items:[
+    { href:"/calculators", label:"Calculators", icon:Calculator },
+    { href:"/glossary",    label:"Glossary",    icon:BookOpen },
+  ]},
   { label:"Research", items:[
     { href:"/research",  label:"Research Hub",  icon:GraduationCap, badge:"UTPB" },
   ]},
 ];
 
-export function Sidebar({ open, onToggle }: { open:boolean; onToggle:()=>void }) {
+export function Sidebar({ open, onToggle, onSearchOpen }: { open:boolean; onToggle:()=>void; onSearchOpen?:()=>void }) {
   const path = usePathname();
   return (
     <aside style={{
@@ -55,11 +60,11 @@ export function Sidebar({ open, onToggle }: { open:boolean; onToggle:()=>void })
       {/* Search */}
       {open && (
         <div style={{ padding:"10px 12px", borderBottom:"1px solid var(--border)", flexShrink:0 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8, background:"var(--bg-elevated)", border:"1px solid var(--border-medium)", borderRadius:8, padding:"6px 10px" }}>
+          <button onClick={onSearchOpen} style={{ display:"flex", alignItems:"center", gap:8, background:"var(--bg-elevated)", border:"1px solid var(--border-medium)", borderRadius:8, padding:"6px 10px", width:"100%", cursor:"pointer", textAlign:"left" }}>
             <Search size={13} style={{ color:"var(--text-muted)", flexShrink:0 }}/>
-            <input type="text" placeholder="Search tickers, filings..." style={{ background:"transparent", border:"none", outline:"none", color:"var(--text-primary)", fontSize:12, width:"100%" }}/>
+            <span style={{ background:"transparent", color:"var(--text-muted)", fontSize:12, flex:1 }}>Search tickers, filings…</span>
             <kbd style={{ fontSize:10, color:"var(--text-muted)", background:"var(--bg-base)", border:"1px solid var(--border)", borderRadius:4, padding:"1px 5px", fontFamily:"monospace" }}>⌘K</kbd>
-          </div>
+          </button>
         </div>
       )}
 

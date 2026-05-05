@@ -100,7 +100,7 @@ export default async function NewsPage() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
                   <SentimentBadge s={item.sentiment}/>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{dayjs(item.publishedAt).fromNow?.() ?? dayjs(item.publishedAt).format("MMM D")}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{dayjs(item.publishedAt).format("MMM D")}</span>
                   <span style={{ fontSize: 11, color: "var(--text-muted)" }}>· {item.source}</span>
                 </div>
                 <p style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.5, color: "var(--text-primary)", marginBottom: 0 }}>{item.title}</p>
