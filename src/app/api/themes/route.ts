@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getQuote } from "@/lib/data/alpha-vantage";
+import { withCache } from "@/lib/cache";
 
 export const runtime = "nodejs";
 export const revalidate = 3600;
@@ -28,6 +29,16 @@ function sleep(ms: number): Promise<void> {
 
 export async function GET() {
   try {
+    // Redis cache for 1 hour — Alpha Vantage free tier = 25 req/day
+    const cached = await withCache("themes:v1", fetchThemes, 3600).catch(() => fetchThemes());
+    return NextResponse.json({ themes: cached, generated: new Date().toISOString() });
+  } catch (err) {
+    console.error("[api/themes]", err);
+    return NextResponse.json({ themes: [], generated: new Date().toISOString(), error: "Failed to fetch theme data" });
+  }
+}
+
+async function fetchThemes() {
     // Collect all unique tickers across themes
     const allTickers: string[] = [];
     for (const theme of THEMES) {
@@ -82,9 +93,5 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ themes, generated: new Date().toISOString() });
-  } catch (err) {
-    console.error("[api/themes]", err);
-    return NextResponse.json({ themes: [], generated: new Date().toISOString(), error: "Failed to fetch theme data" });
-  }
+    return themes;
 }
