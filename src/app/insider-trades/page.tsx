@@ -1,21 +1,99 @@
-import { DataPreviewTable } from "@/components/shared/DataPreviewTable";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-const COLS=[{key:"insider",label:"Insider",width:"160px"},{key:"ticker",label:"Ticker",width:"80px"},{key:"type",label:"Trade",width:"70px"},{key:"shares",label:"Shares",width:"90px"},{key:"value",label:"Value",width:"90px"},{key:"score",label:"Signal",width:"70px"},{key:"date",label:"Date",width:"80px"}];
-function Score({n}:{n:number}){const c=n>=80?"var(--bull)":n>=60?"var(--accent)":"var(--neutral)";return <span style={{fontFamily:"monospace",fontWeight:700,color:c}}>{n}</span>}
-const VISIBLE=[
-  {id:"1",cells:{insider:<span style={{fontSize:12}}>Tim Cook <span style={{color:"var(--text-muted)",fontSize:11}}>(CEO)</span></span>,ticker:<span style={{fontFamily:"monospace",fontWeight:700,color:"var(--accent)"}}>AAPL</span>,type:<span className="pill pill-bull">BUY</span>,shares:<span style={{fontFamily:"monospace"}}>150,000</span>,value:<span style={{fontFamily:"monospace",color:"var(--bull)"}}>$31.2M</span>,score:<Score n={94}/>,date:<span style={{fontSize:11,color:"var(--text-secondary)"}}>Today</span>},expanded:<div><strong style={{color:"var(--text-primary)"}}>Signal analysis:</strong> CEO purchase of $31.2M is the largest single Cook transaction since 2019. Historical: Cook purchases above $20M preceded positive 90-day returns in 7/7 occurrences, avg return +11.4%. Conviction: A.<div style={{marginTop:8,display:"flex",gap:8}}><span className="pill pill-bull">CEO Purchase</span><span className="pill pill-bull">Conviction: A</span></div></div>},
-  {id:"2",cells:{insider:<span style={{fontSize:12}}>Jensen Huang <span style={{color:"var(--text-muted)",fontSize:11}}>(CEO)</span></span>,ticker:<span style={{fontFamily:"monospace",fontWeight:700,color:"var(--accent)"}}>NVDA</span>,type:<span className="pill pill-bull">BUY</span>,shares:<span style={{fontFamily:"monospace"}}>75,000</span>,value:<span style={{fontFamily:"monospace",color:"var(--bull)"}}>$10.1M</span>,score:<Score n={91}/>,date:<span style={{fontSize:11,color:"var(--text-secondary)"}}>Today</span>},expanded:null},
-  {id:"3",cells:{insider:<span style={{fontSize:12}}>Satya Nadella <span style={{color:"var(--text-muted)",fontSize:11}}>(CEO)</span></span>,ticker:<span style={{fontFamily:"monospace",fontWeight:700,color:"var(--accent)"}}>MSFT</span>,type:<span className="pill pill-bear">SELL</span>,shares:<span style={{fontFamily:"monospace"}}>50,000</span>,value:<span style={{fontFamily:"monospace",color:"var(--bear)"}}>$22.3M</span>,score:<Score n={48}/>,date:<span style={{fontSize:11,color:"var(--text-secondary)"}}>Yesterday</span>},expanded:null},
-  {id:"4",cells:{insider:<span style={{fontSize:12}}>Elon Musk <span style={{color:"var(--text-muted)",fontSize:11}}>(Dir)</span></span>,ticker:<span style={{fontFamily:"monospace",fontWeight:700,color:"var(--accent)"}}>TSLA</span>,type:<span className="pill pill-bull">BUY</span>,shares:<span style={{fontFamily:"monospace"}}>200,000</span>,value:<span style={{fontFamily:"monospace",color:"var(--bull)"}}>$42.8M</span>,score:<Score n={89}/>,date:<span style={{fontSize:11,color:"var(--text-secondary)"}}>2d ago</span>},expanded:null},
-];
-const LOCKED=Array.from({length:6},(_,i)=>({id:`l${i}`,cells:{}}));
-export default function Page(){return(
-  <div style={{padding:"32px 24px",maxWidth:1200,margin:"0 auto"}}>
-    <div style={{marginBottom:28,display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
-      <div><div style={{fontSize:11,fontWeight:600,letterSpacing:"0.1em",color:"var(--accent)",textTransform:"uppercase",marginBottom:8}}>Form 4 · EDGAR</div><h1 style={{fontSize:"clamp(22px,3vw,32px)",fontWeight:700,letterSpacing:"-0.02em",marginBottom:6}}>Insider Trades</h1><p style={{fontSize:14,color:"var(--text-secondary)"}}>Track cluster buys, CEO purchases, and historically significant insider activity.</p></div>
-      <Link href="/register?plan=alpha" style={{display:"inline-flex",alignItems:"center",gap:7,background:"var(--accent)",color:"#fff",padding:"10px 20px",borderRadius:8,fontSize:13,fontWeight:600,textDecoration:"none"}}>Unlock all trades <ArrowRight size={14}/></Link>
+import { ArrowRight, UserCheck } from "lucide-react";
+
+export const revalidate = 1800;
+
+async function getTrades() {
+  try {
+    const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const res = await fetch(`${base}/api/insider-trades`, { next: { revalidate: 1800 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.trades ?? [];
+  } catch { return []; }
+}
+
+function relTime(iso: string) {
+  try {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  } catch { return iso?.slice(0, 10) ?? "—"; }
+}
+
+export default async function InsiderTradesPage() {
+  const trades = await getTrades();
+
+  return (
+    <div style={{ padding: "32px 24px", maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ marginBottom: 28, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 8 }}>Form 4 · EDGAR</div>
+          <h1 style={{ fontSize: "clamp(22px,3vw,32px)", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>Insider Trades</h1>
+          <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>Live Form 4 filings from SEC EDGAR — officer and director transactions in real time.</p>
+        </div>
+        <Link href="/register?plan=alpha" style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--accent)", color: "#fff", padding: "10px 20px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+          Unlock signal scores <ArrowRight size={14} />
+        </Link>
+      </div>
+
+      {trades.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 60, color: "var(--text-secondary)" }}>
+          <UserCheck size={32} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
+          <div>No insider trades found. Try again shortly.</div>
+        </div>
+      ) : (
+        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 14, overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px", background: "var(--bg-surface)", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Recent Form 4 Filings</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{trades.length} transactions</div>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                  {["Company", "Ticker", "Filed", "Price", "Chg%", "Filing"].map(h => (
+                    <th key={h} style={{ padding: "8px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {trades.map((t: any, i: number) => {
+                  const chgPct = t.quote?.changePct;
+                  const isUp = chgPct != null && chgPct > 0;
+                  return (
+                    <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "10px 16px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-primary)" }}>
+                        {t.companyName ?? t.entityName ?? "—"}
+                      </td>
+                      <td style={{ padding: "10px 16px", fontFamily: "monospace", fontWeight: 700, color: "var(--accent)" }}>
+                        {t.ticker ?? "—"}
+                      </td>
+                      <td style={{ padding: "10px 16px", fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {relTime(t.filedAt)}
+                      </td>
+                      <td style={{ padding: "10px 16px", fontFamily: "monospace", color: "var(--text-primary)" }}>
+                        {t.quote?.price != null ? `$${t.quote.price.toFixed(2)}` : "—"}
+                      </td>
+                      <td style={{ padding: "10px 16px", fontFamily: "monospace", fontWeight: 600, color: chgPct == null ? "var(--text-muted)" : isUp ? "var(--bull)" : "var(--bear)" }}>
+                        {chgPct != null ? `${isUp ? "+" : ""}${chgPct.toFixed(2)}%` : "—"}
+                      </td>
+                      <td style={{ padding: "10px 16px" }}>
+                        <a href={t.linkToFilingDetails} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontSize: 11, textDecoration: "none" }}>
+                          View →
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
-    <DataPreviewTable title="Recent Insider Transactions" subtitle="Showing 4 of 47 transactions today." cols={COLS} visible={VISIBLE} locked={LOCKED}/>
-  </div>
-);}
+  );
+}
