@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Zap, FileText, BarChart2, UserCheck, Landmark, FlaskConical, Newspaper, ScanLine, Calendar, TrendingUp, LogIn, Heart, Search, Menu, X, ChevronRight, Star } from "lucide-react";
+import { Home, Zap, FileText, BarChart2, UserCheck, Landmark, FlaskConical, Newspaper, ScanLine, Calendar, TrendingUp, LogIn, Heart, Search, Menu, X, ChevronRight, Star, GraduationCap } from "lucide-react";
 
 const NAV = [
   { label:"Platform", items:[
@@ -16,10 +16,13 @@ const NAV = [
     { href:"/fda-decisions",        label:"FDA Decisions",       icon:FlaskConical },
   ]},
   { label:"Intelligence", items:[
-    { href:"/news",      label:"News Feed",  icon:Newspaper },
-    { href:"/scanners",  label:"Scanners",   icon:ScanLine,   soon:true },
-    { href:"/calendars", label:"Calendars",  icon:Calendar,   soon:true },
-    { href:"/themes",    label:"Themes",     icon:TrendingUp, soon:true },
+    { href:"/news",      label:"News Feed",     icon:Newspaper },
+    { href:"/scanners",  label:"Scanners",      icon:ScanLine },
+    { href:"/calendars", label:"Calendars",     icon:Calendar },
+    { href:"/themes",    label:"Themes",        icon:TrendingUp },
+  ]},
+  { label:"Research", items:[
+    { href:"/research",  label:"Research Hub",  icon:GraduationCap, badge:"UTPB" },
   ]},
 ];
 
@@ -83,9 +86,10 @@ export function Sidebar({ open, onToggle }: { open:boolean; onToggle:()=>void })
                   <Icon size={17} style={{ flexShrink:0, color: active ? "var(--accent)" : "currentColor" }}/>
                   {open && <>
                     <span style={{ fontSize:13, fontWeight: active ? 500 : 400, flex:1 }}>{item.label}</span>
-                    {item.live && <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:20, background:"var(--bull-dim)", color:"var(--bull)", border:"1px solid var(--bull-border)" }}>LIVE</span>}
-                    {item.soon && <span style={{ fontSize:9, fontWeight:600, padding:"1px 6px", borderRadius:20, background:"rgba(124,148,175,0.12)", color:"var(--text-muted)" }}>SOON</span>}
-                    {!active && !item.soon && <ChevronRight size={12} style={{ color:"var(--text-muted)", opacity:0.5 }}/>}
+                    {item.live  && <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:20, background:"var(--bull-dim)", color:"var(--bull)", border:"1px solid var(--bull-border)" }}>LIVE</span>}
+                    {item.soon  && <span style={{ fontSize:9, fontWeight:600, padding:"1px 6px", borderRadius:20, background:"rgba(124,148,175,0.12)", color:"var(--text-muted)" }}>SOON</span>}
+                    {item.badge && <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:20, background:"var(--accent-dim)", color:"var(--accent)", border:"1px solid var(--accent-glow)" }}>{item.badge}</span>}
+                    {!active && !item.soon && !item.badge && <ChevronRight size={12} style={{ color:"var(--text-muted)", opacity:0.5 }}/>}
                   </>}
                 </Link>
               );

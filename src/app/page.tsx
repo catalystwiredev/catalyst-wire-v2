@@ -30,7 +30,7 @@ export default function HomePage() {
         <div style={{ maxWidth:1200, margin:"0 auto", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:16 }}>
           <div>
             <span style={{ fontFamily:"monospace", fontWeight:700, fontSize:16, color:"var(--text-primary)" }}>catalyst<span style={{ color:"var(--accent)" }}>wire</span></span>
-            <div style={{ fontSize:11, color:"var(--text-muted)", marginTop:4 }}>© 2025 Catalyst Wire. For informational purposes only. Not financial advice.</div>
+            <div style={{ fontSize:11, color:"var(--text-muted)", marginTop:4 }}>© 2026 Catalyst Wire. For informational purposes only. Not financial advice.</div>
           </div>
           <div style={{ display:"flex", gap:24, flexWrap:"wrap" }}>
             {["Pricing","About","Privacy","Terms","Contact","Donate"].map(l=>(
