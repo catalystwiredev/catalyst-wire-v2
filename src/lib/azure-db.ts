@@ -136,3 +136,69 @@ export async function setStripeCustomerId(userId: string, stripeCustomerId: stri
     conn.execSql(req);
   });
 }
+
+export async function saveContactMessage(name: string, email: string, subject: string, message: string): Promise<void> {
+  const conn = await getConnection();
+  return new Promise((resolve, reject) => {
+    const req = new Request(
+      `INSERT INTO ContactMessages (name, email, subject, message, created_at) VALUES (@name, @email, @subject, @message, GETUTCDATE())`,
+      (err) => { conn.close(); if (err) reject(err); else resolve(); }
+    );
+    req.addParameter("name",    TYPES.NVarChar, name.trim());
+    req.addParameter("email",   TYPES.NVarChar, email.toLowerCase().trim());
+    req.addParameter("subject", TYPES.NVarChar, subject.trim());
+    req.addParameter("message", TYPES.NVarChar, message.trim());
+    conn.execSql(req);
+  });
+}
+
+export interface WatchlistItem {
+  id: string;
+  symbol: string;
+  name: string | null;
+  asset_type: string;
+  added_at: string;
+}
+
+export async function getWatchlist(userId: string): Promise<WatchlistItem[]> {
+  const conn = await getConnection();
+  return new Promise((resolve, reject) => {
+    const rows: WatchlistItem[] = [];
+    const req = new Request(
+      `SELECT id, symbol, name, asset_type, added_at FROM Watchlists WHERE user_id = @userId ORDER BY added_at DESC`,
+      (err) => { conn.close(); if (err) reject(err); else resolve(rows); }
+    );
+    req.addParameter("userId", TYPES.UniqueIdentifier, userId);
+    req.on("row", (cols) => { const r: any = {}; cols.forEach((c: any) => { r[c.metadata.colName] = c.value; }); rows.push(r); });
+    conn.execSql(req);
+  });
+}
+
+export async function addWatchlistItem(userId: string, symbol: string, name: string, assetType: string): Promise<void> {
+  const conn = await getConnection();
+  return new Promise((resolve, reject) => {
+    const req = new Request(
+      `IF NOT EXISTS (SELECT 1 FROM Watchlists WHERE user_id = @userId AND symbol = @symbol)
+       INSERT INTO Watchlists (user_id, symbol, name, asset_type, added_at) VALUES (@userId, @symbol, @name, @assetType, GETUTCDATE())`,
+      (err) => { conn.close(); if (err) reject(err); else resolve(); }
+    );
+    req.addParameter("userId",    TYPES.UniqueIdentifier, userId);
+    req.addParameter("symbol",    TYPES.NVarChar, symbol.toUpperCase().trim());
+    req.addParameter("name",      TYPES.NVarChar, name.trim());
+    req.addParameter("assetType", TYPES.NVarChar, assetType);
+    conn.execSql(req);
+  });
+}
+
+export async function removeWatchlistItem(userId: string, symbol: string): Promise<void> {
+  const conn = await getConnection();
+  return new Promise((resolve, reject) => {
+    const req = new Request(
+      `DELETE FROM Watchlists WHERE user_id = @userId AND symbol = @symbol`,
+      (err) => { conn.close(); if (err) reject(err); else resolve(); }
+    );
+    req.addParameter("userId", TYPES.UniqueIdentifier, userId);
+    req.addParameter("symbol", TYPES.NVarChar, symbol.toUpperCase().trim());
+    conn.execSql(req);
+  });
+}
