@@ -2,8 +2,8 @@
  * SEC EDGAR Full-Text Search API (free, no auth required)
  * Docs: https://efts.sec.gov/LATEST/search-index?q=...
  *
- * UTPB / academic: also leverage WRDS CRSP/Compustat for deeper filing data.
- * Set WRDS_USERNAME + WRDS_PASSWORD in env for premium academic access.
+ * Premium: leverage WRDS CRSP/Compustat for deeper filing data.
+ * Set WRDS_USERNAME + WRDS_PASSWORD in env for institutional access.
  */
 
 const EDGAR_BASE = "https://efts.sec.gov/LATEST/search-index";

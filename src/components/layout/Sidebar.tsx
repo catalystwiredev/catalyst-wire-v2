@@ -27,7 +27,7 @@ const NAV = [
     { href:"/glossary",    label:"Glossary",    icon:BookOpen },
   ]},
   { label:"Research", items:[
-    { href:"/research",  label:"Research Hub",  icon:GraduationCap, badge:"UTPB" },
+    { href:"/research",  label:"Research Hub",  icon:GraduationCap },
   ]},
 ];
 

@@ -1,175 +1,186 @@
 import Link from "next/link";
-import { Calendar, FlaskConical, BarChart2, Rocket, Lock, ArrowRight } from "lucide-react";
+import { Calendar, FlaskConical, BarChart2, Rocket, ArrowRight, ExternalLink } from "lucide-react";
 
-const FDA_EVENTS = [
-  { ticker:"MRNA",  drug:"mRNA-1283 (flu vaccine)",              date:"May 12, 2026",  type:"PDUFA",         score:91, verdict:"APPROVAL", free:true },
-  { ticker:"BIIB",  drug:"lecanemab (Alzheimer's)",              date:"May 19, 2026",  type:"AdCom Vote",    score:84, verdict:"POSITIVE",  free:true },
-  { ticker:"SGEN",  drug:"enfortumab vedotin + pembro",          date:"Jun 3, 2026",   type:"PDUFA",         score:79, verdict:"APPROVAL",  free:false },
-  { ticker:"RXMD",  drug:"RX-0301 (pain)",                       date:"Jun 18, 2026",  type:"PDUFA",         score:55, verdict:"CRL RISK",  free:false },
-  { ticker:"FATE",  drug:"FT596 (CD19 NK cell therapy)",         date:"Jul 7, 2026",   type:"PDUFA",         score:71, verdict:"POSSIBLE",  free:false },
-  { ticker:"BLUE",  drug:"betibeglogene (gene therapy)",         date:"Jul 22, 2026",  type:"Panel Vote",    score:82, verdict:"POSITIVE",  free:false },
-];
+export const revalidate = 3600;
 
-const EARNINGS = [
-  { ticker:"TSLA",  report:"Q1 2026 Earnings",  date:"Apr 23, 2026",  eps_est:"$0.52", rev_est:"$22.1B",  iv_move:"±11%", score:78, free:true },
-  { ticker:"MSFT",  report:"Q3 FY2026 Earnings",date:"Apr 30, 2026",  eps_est:"$3.22", rev_est:"$69.8B",  iv_move:"±5%",  score:82, free:true },
-  { ticker:"AMZN",  report:"Q1 2026 Earnings",  date:"May 1, 2026",   eps_est:"$1.36", rev_est:"$155B",   iv_move:"±7%",  score:85, free:false },
-  { ticker:"GOOG",  report:"Q1 2026 Earnings",  date:"Apr 29, 2026",  eps_est:"$2.01", rev_est:"$89.4B",  iv_move:"±6%",  score:80, free:false },
-];
-
-const IPOS = [
-  { ticker:"XXXX",  name:"Stealth AI Startup",         date:"May 8, 2026",  price:"$14–16",  score:72, sector:"AI/ML",         free:true },
-  { ticker:"YYYY",  name:"Biotech Phase 3 Co",          date:"May 15, 2026", price:"$10–12",  score:68, sector:"Biotech",       free:false },
-  { ticker:"ZZZZ",  name:"Green Energy Infrastructure", date:"Jun 2, 2026",  price:"$18–20",  score:74, sector:"Clean Energy",  free:false },
-];
-
-function VerdictTag({ v }: { v: string }) {
-  const color = v.startsWith("APPROVAL") || v === "POSITIVE" ? "var(--bull)" : v.includes("CRL") ? "var(--bear)" : "var(--neutral)";
-  return <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, color, background: `${color}18`, border: `1px solid ${color}40` }}>{v}</span>;
+async function getCalendarData() {
+  try {
+    const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const res = await fetch(`${base}/api/calendars`, { next: { revalidate: 3600 } });
+    if (!res.ok) return { earnings: [], fdaApps: [], ipoFilings: [] };
+    return await res.json();
+  } catch { return { earnings: [], fdaApps: [], ipoFilings: [] }; }
 }
 
-function LockOverlay() {
+function fmt(v: number | null | undefined, prefix = "", suffix = "") {
+  if (v == null || isNaN(Number(v))) return "—";
+  const n = Number(v);
+  if (Math.abs(n) >= 1e9) return `${prefix}${(n / 1e9).toFixed(1)}B${suffix}`;
+  if (Math.abs(n) >= 1e6) return `${prefix}${(n / 1e6).toFixed(1)}M${suffix}`;
+  return `${prefix}${n.toFixed(2)}${suffix}`;
+}
+
+function relTime(iso: string) {
+  try {
+    const diff = Date.now() - new Date(iso).getTime();
+    const h = Math.floor(diff / 3600000);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  } catch { return iso?.slice(0, 10) ?? "—"; }
+}
+
+function StatusBadge({ s }: { s: string }) {
+  const u = (s ?? "").toUpperCase();
+  const c = u.includes("AP") ? "var(--bull)" : u.includes("COMPLETE") ? "var(--accent)" : u.includes("WITHDRAW") || u.includes("CRL") ? "var(--bear)" : "var(--neutral)";
+  return <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: `${c}15`, color: c, border: `1px solid ${c}35`, whiteSpace: "nowrap" }}>{u}</span>;
+}
+
+function SectionHeader({ icon: Icon, title, count, color = "var(--accent)" }: { icon: any; title: string; count?: number; color?: string }) {
   return (
-    <div style={{ position: "absolute", inset: 0, backdropFilter: "blur(5px)", background: "rgba(8,12,20,0.6)", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 0 }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-        <Lock size={14} style={{ color: "var(--accent)" }}/>
-        <Link href="/pricing" style={{ fontSize: 11, fontWeight: 600, color: "var(--accent)", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}>
-          Upgrade <ArrowRight size={10}/>
-        </Link>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+      <div style={{ width: 32, height: 32, background: `${color}15`, border: `1px solid ${color}30`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon size={16} style={{ color }} />
       </div>
+      <h2 style={{ fontSize: 18, fontWeight: 700 }}>{title}</h2>
+      {count != null && <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "monospace" }}>{count} items</span>}
     </div>
   );
 }
 
-export default function CalendarsPage() {
+export default async function CalendarsPage() {
+  const { earnings, fdaApps, ipoFilings } = await getCalendarData();
+
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 72px" }}>
       <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 8 }}>Event Calendars</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 8 }}>Event Intelligence</div>
         <h1 style={{ fontSize: "clamp(22px,3vw,36px)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8 }}>FDA · Earnings · IPO Calendars</h1>
-        <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>All upcoming high-impact market events, scored and ranked by AI conviction.</p>
+        <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>Upcoming high-impact market events sourced live from Finnhub, OpenFDA, and SEC EDGAR.</p>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-
-        {/* FDA Calendar */}
-        <section>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <FlaskConical size={18} style={{ color: "var(--accent)" }}/>
-            <h2 style={{ fontSize: 18, fontWeight: 700 }}>FDA PDUFA & AdCom Calendar</h2>
-          </div>
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                    {["Ticker","Drug / Indication","Date","Event Type","AI Score","AI Verdict"].map(h => (
-                      <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {FDA_EVENTS.map((row, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid var(--border)", position: "relative" }}>
-                      {!row.free && <td colSpan={6} style={{ padding: 0, position: "relative", height: 44 }}><LockOverlay/></td>}
-                      {row.free && <>
-                        <td style={{ padding: "10px 14px", fontFamily: "monospace", fontWeight: 700, color: "var(--accent)" }}>${row.ticker}</td>
-                        <td style={{ padding: "10px 14px", color: "var(--text-secondary)", maxWidth: 260 }}>{row.drug}</td>
-                        <td style={{ padding: "10px 14px", fontWeight: 600 }}>{row.date}</td>
-                        <td style={{ padding: "10px 14px", color: "var(--text-muted)", fontSize: 12 }}>{row.type}</td>
-                        <td style={{ padding: "10px 14px", fontFamily: "monospace", fontWeight: 700, color: row.score >= 80 ? "var(--bull)" : "var(--accent)" }}>{row.score}</td>
-                        <td style={{ padding: "10px 14px" }}><VerdictTag v={row.verdict}/></td>
-                      </>}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+      <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
 
         {/* Earnings Calendar */}
         <section>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <BarChart2 size={18} style={{ color: "var(--accent)" }}/>
-            <h2 style={{ fontSize: 18, fontWeight: 700 }}>Earnings Calendar</h2>
-          </div>
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                    {["Ticker","Report","Date","EPS Est.","Rev Est.","IV Move","AI Score"].map(h => (
-                      <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {EARNINGS.map((row, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid var(--border)", position: "relative" }}>
-                      {!row.free && (
-                        <td colSpan={7} style={{ padding: 0, position: "relative", height: 44 }}><LockOverlay/></td>
-                      )}
-                      {row.free && <>
-                        <td style={{ padding: "10px 14px", fontFamily: "monospace", fontWeight: 700, color: "var(--accent)" }}>${row.ticker}</td>
-                        <td style={{ padding: "10px 14px", color: "var(--text-secondary)" }}>{row.report}</td>
-                        <td style={{ padding: "10px 14px", fontWeight: 600 }}>{row.date}</td>
-                        <td style={{ padding: "10px 14px", fontFamily: "monospace" }}>{row.eps_est}</td>
-                        <td style={{ padding: "10px 14px", fontFamily: "monospace" }}>{row.rev_est}</td>
-                        <td style={{ padding: "10px 14px", color: "var(--neutral)" }}>{row.iv_move}</td>
-                        <td style={{ padding: "10px 14px", fontFamily: "monospace", fontWeight: 700, color: "var(--bull)" }}>{row.score}</td>
-                      </>}
+          <SectionHeader icon={BarChart2} title="Earnings Calendar" count={earnings?.length} color="var(--bull)" />
+          {!earnings?.length ? (
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 13 }}>No upcoming earnings data available right now.</div>
+          ) : (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border)" }}>
+                      {["Date", "Ticker", "EPS Estimate", "EPS Actual", "Revenue Estimate", "Revenue Actual", "Quarter"].map(h => (
+                        <th key={h} style={{ padding: "9px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {earnings.slice(0, 30).map((e: any, i: number) => {
+                      const beat = e.epsActual != null && e.epsActual >= (e.epsEstimate ?? 0);
+                      return (
+                        <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td style={{ padding: "9px 14px", fontFamily: "monospace", fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{e.date}</td>
+                          <td style={{ padding: "9px 14px", fontFamily: "monospace", fontWeight: 700, color: "var(--accent)" }}>{e.symbol}</td>
+                          <td style={{ padding: "9px 14px", fontFamily: "monospace" }}>{fmt(e.epsEstimate, "$")}</td>
+                          <td style={{ padding: "9px 14px", fontFamily: "monospace", color: e.epsActual != null ? (beat ? "var(--bull)" : "var(--bear)") : "var(--text-muted)" }}>
+                            {e.epsActual != null ? fmt(e.epsActual, "$") : "—"}
+                          </td>
+                          <td style={{ padding: "9px 14px", fontFamily: "monospace" }}>{fmt(e.revenueEstimate, "$")}</td>
+                          <td style={{ padding: "9px 14px", fontFamily: "monospace", color: "var(--text-muted)" }}>{e.revenueActual ? fmt(e.revenueActual, "$") : "—"}</td>
+                          <td style={{ padding: "9px 14px", fontSize: 11, color: "var(--text-secondary)" }}>{e.quarter ? `Q${e.quarter} ${e.year ?? ""}` : "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
-        {/* IPO Calendar */}
+        {/* FDA Drug Applications */}
         <section>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <Rocket size={18} style={{ color: "var(--accent)" }}/>
-            <h2 style={{ fontSize: 18, fontWeight: 700 }}>IPO Calendar</h2>
-          </div>
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                    {["Ticker","Company","Expected Date","Price Range","Sector","AI Score"].map(h => (
-                      <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {IPOS.map((row, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid var(--border)", position: "relative" }}>
-                      {!row.free && (
-                        <td colSpan={6} style={{ padding: 0, position: "relative", height: 44 }}><LockOverlay/></td>
-                      )}
-                      {row.free && <>
-                        <td style={{ padding: "10px 14px", fontFamily: "monospace", fontWeight: 700, color: "var(--accent)" }}>{row.ticker}</td>
-                        <td style={{ padding: "10px 14px", fontWeight: 500 }}>{row.name}</td>
-                        <td style={{ padding: "10px 14px", fontWeight: 600 }}>{row.date}</td>
-                        <td style={{ padding: "10px 14px", fontFamily: "monospace" }}>{row.price}</td>
-                        <td style={{ padding: "10px 14px", color: "var(--text-secondary)" }}>{row.sector}</td>
-                        <td style={{ padding: "10px 14px", fontFamily: "monospace", fontWeight: 700, color: "var(--accent)" }}>{row.score}</td>
-                      </>}
+          <SectionHeader icon={FlaskConical} title="FDA Drug Applications (NDA/BLA)" count={fdaApps?.length} color="#f472b6" />
+          {!fdaApps?.length ? (
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 13 }}>No FDA application data available right now.</div>
+          ) : (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border)" }}>
+                      {["App #", "Sponsor", "Brand Name", "Generic Name", "Status", "Priority"].map(h => (
+                        <th key={h} style={{ padding: "9px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {fdaApps.slice(0, 20).map((a: any, i: number) => {
+                      const sub = a.submissions?.[0];
+                      return (
+                        <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td style={{ padding: "9px 14px", fontFamily: "monospace", fontSize: 11, color: "#f472b6" }}>{a.application_number ?? "—"}</td>
+                          <td style={{ padding: "9px 14px", fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.sponsor_name ?? "—"}</td>
+                          <td style={{ padding: "9px 14px", fontWeight: 600, fontSize: 12 }}>{a.brand_name ?? "—"}</td>
+                          <td style={{ padding: "9px 14px", fontSize: 12, color: "var(--text-secondary)" }}>{a.generic_name ?? a.drug_substance_name ?? "—"}</td>
+                          <td style={{ padding: "9px 14px" }}>{sub?.submission_status ? <StatusBadge s={sub.submission_status} /> : "—"}</td>
+                          <td style={{ padding: "9px 14px", fontSize: 11, color: "var(--text-secondary)" }}>{sub?.review_priority ?? "Standard"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
+        </section>
+
+        {/* IPO Filings (S-1) */}
+        <section>
+          <SectionHeader icon={Rocket} title="IPO Filings (S-1 Registrations)" count={ipoFilings?.length} color="var(--accent)" />
+          {!ipoFilings?.length ? (
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 13 }}>No recent S-1 filings found.</div>
+          ) : (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border)" }}>
+                      {["Company", "Form", "Filed", "Description", "EDGAR"].map(h => (
+                        <th key={h} style={{ padding: "9px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ipoFilings.map((f: any, i: number) => (
+                      <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                        <td style={{ padding: "9px 14px", fontWeight: 600, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.companyName ?? f.entityName ?? "—"}</td>
+                        <td style={{ padding: "9px 14px" }}>
+                          <span style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, background: "var(--accent-dim)", color: "var(--accent)", border: "1px solid rgba(0,153,255,0.25)", borderRadius: 5, padding: "1px 6px" }}>{f.formType}</span>
+                        </td>
+                        <td style={{ padding: "9px 14px", fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{relTime(f.filedAt)}</td>
+                        <td style={{ padding: "9px 14px", fontSize: 12, color: "var(--text-secondary)", maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.description ?? f.periodOfReport ?? "—"}</td>
+                        <td style={{ padding: "9px 14px" }}>
+                          <a href={f.linkToFilingDetails} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontSize: 11, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                            View <ExternalLink size={9}/>
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </section>
       </div>
 
       <div style={{ marginTop: 36, textAlign: "center" }}>
-        <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 14 }}>Unlock all calendar events with an Alpha plan.</p>
+        <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 14 }}>Unlock full calendar access with an Alpha plan — including AI conviction scores on every event.</p>
         <Link href="/pricing" style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--accent)", color: "#fff", padding: "10px 22px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
-          <Calendar size={13}/> Upgrade to Alpha <ArrowRight size={13}/>
+          <Calendar size={13}/> View plans <ArrowRight size={13}/>
         </Link>
       </div>
     </div>

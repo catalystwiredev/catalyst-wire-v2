@@ -19,7 +19,7 @@ export default function HomePage() {
           <Heart size={28} style={{ color:"var(--bear)", marginBottom:16 }}/>
           <h2 style={{ fontSize:24, fontWeight:700, marginBottom:10, letterSpacing:"-0.02em" }}>Support Catalyst Wire</h2>
           <p style={{ fontSize:14, color:"var(--text-secondary)", lineHeight:1.7, marginBottom:24 }}>
-            Catalyst Wire is built entirely by one person — a UTPB student and solo developer. Every donation directly funds new data sources, infrastructure, and features. If this platform has helped your trading, consider supporting its growth.
+            Catalyst Wire is built entirely by one person — a solo developer and active trader. There is no VC funding, no team, no safety net. Every donation directly funds new data sources, infrastructure, and features. If this platform has helped your trading, consider supporting its growth.
           </p>
           <Link href="/donate" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"var(--bear-dim)", color:"var(--bear)", border:"1px solid var(--bear-border)", padding:"10px 24px", borderRadius:8, fontSize:14, fontWeight:600, textDecoration:"none" }}>
             <Heart size={15}/> Make a donation

@@ -14,7 +14,7 @@ const TIMELINE = [
   { date: "2025 Q1", event: "Azure SQL + Web PubSub backend wired up. TradingView integration live." },
   { date: "2025 Q2", event: "Congressional trades + FDA calendar pipelines deployed. Private beta launched." },
   { date: "2025 Q4", event: "Public launch. Stripe monetization. 12,000+ instruments covered." },
-  { date: "2026 →",  event: "AI conviction v2, real-time news NLP, UTPB academic data partnerships." },
+  { date: "2026 →",  event: "AI conviction v2, real-time news NLP, options flow integration, and global macro signals." },
 ];
 
 export default function AboutPage() {
@@ -28,7 +28,7 @@ export default function AboutPage() {
           <span className="gradient-text">For every trader.</span>
         </h1>
         <p style={{ fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.8, maxWidth: 640, marginBottom: 24 }}>
-          Catalyst Wire was born from a simple frustration: institutional desks had real-time catalyst feeds. Retail traders had Twitter and hope. That gap was unacceptable. One UTPB student decided to close it.
+          Catalyst Wire was born from a simple frustration: institutional desks had real-time catalyst feeds. Retail traders had Twitter and hope. That gap was unacceptable — so we built the tool to close it.
         </p>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <Link href="/register" style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--accent)", color: "#fff", padding: "10px 22px", borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
@@ -61,12 +61,12 @@ export default function AboutPage() {
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Founder & Developer</div>
             <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Angel Gomez</h3>
-            <div style={{ fontSize: 13, color: "var(--accent)", marginBottom: 14 }}>Computer Science — University of Texas of the Permian Basin</div>
+            <div style={{ fontSize: 13, color: "var(--accent)", marginBottom: 14 }}>Founder · Full-Stack Developer · Active Trader</div>
             <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 16 }}>
               I&apos;m a solo developer and active trader who built Catalyst Wire because the tools I wanted didn&apos;t exist at a price I could afford. I handle everything — architecture, data pipelines, front-end design, AI scoring, DevOps, and customer support.
             </p>
             <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8 }}>
-              Catalyst Wire runs on Azure infrastructure, SEC EDGAR public APIs, academic financial databases available through UTPB, and a custom NLP pipeline for real-time event scoring. Every dollar of revenue goes directly back into more data sources, faster infrastructure, and better features.
+              Catalyst Wire runs on Azure infrastructure, SEC EDGAR public APIs, OpenFDA, Finnhub, and a custom AI scoring pipeline for real-time event detection. Every dollar of revenue goes directly back into more data sources, faster infrastructure, and better features.
             </p>
           </div>
         </div>
