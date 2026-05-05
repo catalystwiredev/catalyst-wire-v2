@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { saveContactMessage } from "@/lib/azure-db";
+import { sendContactNotification } from "@/lib/azure-email";
 
 const schema = z.object({
   name:    z.string().min(1).max(120),
@@ -20,6 +21,9 @@ export async function POST(req: NextRequest) {
 
     const { name, email, subject, message } = parsed.data;
     await saveContactMessage(name, email, subject, message);
+    sendContactNotification({ name, email, subject, message }).catch(e =>
+      console.error("[api/contact] email failed:", e)
+    );
 
     return NextResponse.json({ ok: true });
   } catch (err) {

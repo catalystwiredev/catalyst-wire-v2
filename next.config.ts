@@ -3,8 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost"],
 
-  // applicationinsights uses dynamic requires that bundlers can't trace statically
-  serverExternalPackages: ["applicationinsights", "tedious"],
+  serverExternalPackages: ["applicationinsights", "tedious", "diagnostic-channel-publishers"],
 
   output: "standalone",
 

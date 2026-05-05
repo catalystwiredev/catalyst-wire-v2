@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getUserByEmail, createUser } from "@/lib/azure-db";
+import { sendWelcomeEmail } from "@/lib/azure-email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,6 +26,9 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12);
     await createUser(email, passwordHash, name.trim());
+    sendWelcomeEmail({ name: name.trim(), email, plan: "Free" }).catch(e =>
+      console.error("[register] welcome email failed:", e)
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {
