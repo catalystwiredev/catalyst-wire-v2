@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Landmark, ExternalLink } from "lucide-react";
 import { getRecent8Ks, searchFilings } from "@/lib/data/sec-edgar";
+import { SecFilingsTable } from "@/components/tables/SecFilingsTable";
 
 export const revalidate = 3600;
 
@@ -17,15 +18,6 @@ async function getCongressionalData() {
       govFilings: govFilings.status === "fulfilled" ? govFilings.value : [],
     };
   } catch { return { form4s: [], govFilings: [] }; }
-}
-
-function relTime(iso: string) {
-  try {
-    const diff = Date.now() - new Date(iso).getTime();
-    const h = Math.floor(diff / 3600000);
-    if (h < 24) return `${h}h ago`;
-    return `${Math.floor(h / 24)}d ago`;
-  } catch { return iso?.slice(0, 10) ?? "—"; }
 }
 
 export default async function CongressionalTradesPage() {
@@ -68,36 +60,7 @@ export default async function CongressionalTradesPage() {
         {form4s.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: "var(--text-secondary)", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12 }}>No Form 4 data available right now.</div>
         ) : (
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 14, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}>
-                    {["Company", "Form", "Filed", "Period", "EDGAR Link"].map(h => (
-                      <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {form4s.slice(0, 20).map((f: any, i: number) => (
-                    <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
-                      <td style={{ padding: "10px 14px", fontWeight: 600, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.companyName ?? "—"}</td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <span style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, background: "rgba(245,158,11,0.12)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 5, padding: "1px 6px" }}>{f.formType ?? "4"}</span>
-                      </td>
-                      <td style={{ padding: "10px 14px", fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{relTime(f.filedAt)}</td>
-                      <td style={{ padding: "10px 14px", fontSize: 11, fontFamily: "monospace", color: "var(--text-secondary)" }}>{f.periodOfReport?.slice(0, 10) ?? "—"}</td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <a href={f.linkToFilingDetails} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontSize: 11, textDecoration: "none" }}>
-                          View →
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <SecFilingsTable filings={form4s.slice(0, 20)} />
         )}
       </div>
 
@@ -107,36 +70,7 @@ export default async function CongressionalTradesPage() {
         {govFilings.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: "var(--text-secondary)", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12 }}>No 8-K data available right now.</div>
         ) : (
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 14, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}>
-                    {["Company", "Form", "Filed", "Description", "Link"].map(h => (
-                      <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {govFilings.slice(0, 15).map((f: any, i: number) => (
-                    <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
-                      <td style={{ padding: "10px 14px", fontWeight: 600, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.companyName ?? "—"}</td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <span style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, background: "var(--accent-dim)", color: "var(--accent)", border: "1px solid rgba(0,153,255,0.25)", borderRadius: 5, padding: "1px 6px" }}>8-K</span>
-                      </td>
-                      <td style={{ padding: "10px 14px", fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{relTime(f.filedAt)}</td>
-                      <td style={{ padding: "10px 14px", fontSize: 12, color: "var(--text-secondary)", maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.description ?? f.periodOfReport ?? "—"}</td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <a href={f.linkToFilingDetails} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontSize: 11, textDecoration: "none" }}>
-                          View →
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <SecFilingsTable filings={govFilings.slice(0, 15)} />
         )}
       </div>
     </div>

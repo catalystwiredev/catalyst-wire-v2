@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, FlaskConical } from "lucide-react";
+import { FDAApplicationsTable, FDARecallsTable } from "@/components/tables/FDATable";
 
 export const revalidate = 3600;
 
@@ -10,12 +11,6 @@ async function getFDAData() {
     if (!res.ok) return { applications: [], recalls: [] };
     return await res.json();
   } catch { return { applications: [], recalls: [] }; }
-}
-
-function StatusBadge({ s }: { s: string }) {
-  const upper = (s ?? "").toUpperCase();
-  const color = upper.includes("AP") ? "var(--bull)" : upper.includes("COMPLETE") ? "var(--accent)" : upper.includes("WITHDRAW") ? "var(--bear)" : "var(--neutral)";
-  return <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: `${color}18`, color, border: `1px solid ${color}40`, whiteSpace: "nowrap" }}>{upper}</span>;
 }
 
 export default async function FDADecisionsPage() {
@@ -34,79 +29,19 @@ export default async function FDADecisionsPage() {
         </Link>
       </div>
 
-      {/* Drug Applications */}
       <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: "var(--text-primary)" }}>Drug Applications (NDA/BLA)</div>
         {applications.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: "var(--text-secondary)" }}>
             <FlaskConical size={28} style={{ margin: "0 auto 10px", opacity: 0.4 }} />
             <div>No applications found at this time.</div>
           </div>
         ) : (
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 14, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}>
-                    {["App #", "Sponsor", "Brand Name", "Generic Name", "Status", "Review Priority"].map(h => (
-                      <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {applications.slice(0, 20).map((a: any, i: number) => {
-                    const latestSub = a.submissions?.[0];
-                    return (
-                      <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
-                        <td style={{ padding: "10px 14px", fontFamily: "monospace", fontSize: 11, color: "var(--accent)" }}>{a.application_number ?? "—"}</td>
-                        <td style={{ padding: "10px 14px", fontSize: 12, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.sponsor_name ?? "—"}</td>
-                        <td style={{ padding: "10px 14px", fontWeight: 600, fontSize: 12 }}>{a.brand_name ?? "—"}</td>
-                        <td style={{ padding: "10px 14px", fontSize: 12, color: "var(--text-secondary)" }}>{a.generic_name ?? a.drug_substance_name ?? "—"}</td>
-                        <td style={{ padding: "10px 14px" }}>
-                          {latestSub?.submission_status ? <StatusBadge s={latestSub.submission_status} /> : "—"}
-                        </td>
-                        <td style={{ padding: "10px 14px", fontSize: 11, color: "var(--text-secondary)" }}>
-                          {latestSub?.review_priority ?? "Standard"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <FDAApplicationsTable applications={applications} />
         )}
       </div>
 
-      {/* Drug Recalls */}
       {recalls.length > 0 && (
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: "var(--text-primary)" }}>Recent Drug Recalls</div>
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 14, overflow: "hidden" }}>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}>
-                    {["Product", "Firm", "Reason", "Date", "Status"].map(h => (
-                      <th key={h} style={{ padding: "8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {recalls.slice(0, 10).map((r: any, i: number) => (
-                    <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
-                      <td style={{ padding: "10px 14px", fontSize: 12, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.product_description ?? "—"}</td>
-                      <td style={{ padding: "10px 14px", fontSize: 12 }}>{r.recalling_firm ?? "—"}</td>
-                      <td style={{ padding: "10px 14px", fontSize: 12, color: "var(--text-secondary)", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.reason_for_recall ?? "—"}</td>
-                      <td style={{ padding: "10px 14px", fontSize: 11, fontFamily: "monospace" }}>{r.recall_initiation_date ?? "—"}</td>
-                      <td style={{ padding: "10px 14px" }}>{r.status ? <StatusBadge s={r.status} /> : "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <FDARecallsTable recalls={recalls} />
       )}
     </div>
   );
