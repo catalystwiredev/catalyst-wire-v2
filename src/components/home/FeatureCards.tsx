@@ -9,8 +9,8 @@ const FEATURES = [
   { icon:Landmark,     color:"var(--gold)",    colorDim:"rgba(255,215,0,0.10)",  title:"Congressional Trades",   description:"STOCK Act disclosures from members of Congress. Political alpha — who's trading before it's mainstream news.", href:"/congressional-trades", stat:"12 disclosures this week" },
   { icon:FlaskConical, color:"#f472b6",        colorDim:"rgba(244,114,182,0.10)",title:"FDA Decisions",           description:"PDUFA dates, drug approvals, clinical trial outcomes — with AI probability scores and historical context.", href:"/fda-decisions",        stat:"8 decisions this month" },
   { icon:BarChart2,    color:"var(--neutral)", colorDim:"rgba(245,158,11,0.10)", title:"Earnings Intelligence",  description:"Pre-earnings AI analysis, historical surprise patterns, options implied moves — all in one view.", href:"/earnings",             stat:"236 reports this week" },
-  { icon:ScanLine,     color:"#34d399",        colorDim:"rgba(52,211,153,0.10)", title:"Momentum Scanners",      description:"Short squeeze, unusual options flow, pre-market movers, sector rotation — scanners built for active traders.", href:"/scanners",             stat:"Coming soon", soon:true },
-  { icon:Calendar,     color:"#60a5fa",        colorDim:"rgba(96,165,250,0.10)", title:"Specialized Calendars",  description:"FDA PDUFA, earnings, IPO, economic releases — all with AI pre-analysis and historical outcome data.", href:"/calendars",            stat:"Coming soon", soon:true },
+  { icon:ScanLine,     color:"#34d399",        colorDim:"rgba(52,211,153,0.10)", title:"Momentum Scanners",      description:"AI-ranked catalyst momentum, unusual volume, and sector rotation — scanners built for active traders.", href:"/scanners",             stat:"Live · updated hourly" },
+  { icon:Calendar,     color:"#60a5fa",        colorDim:"rgba(96,165,250,0.10)", title:"Specialized Calendars",  description:"FDA PDUFA, earnings, IPO S-1 registrations — live from Finnhub, OpenFDA, and SEC EDGAR.", href:"/calendars",            stat:"Live · 3 data sources" },
 ];
 
 export function FeatureCards() {
@@ -27,7 +27,7 @@ export function FeatureCards() {
             const Icon=f.icon;
             return (
               <Link key={f.title} href={f.href} style={{ textDecoration:"none" }}>
-                <div style={{ background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:14, padding:"22px 22px 18px", height:"100%", position:"relative", overflow:"hidden", transition:"border-color 0.2s, background 0.2s, transform 0.2s", cursor:"pointer", opacity:f.soon?0.65:1 }}
+                <div style={{ background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:14, padding:"22px 22px 18px", height:"100%", position:"relative", overflow:"hidden", transition:"border-color 0.2s, background 0.2s, transform 0.2s", cursor:"pointer" }}
                   onMouseEnter={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.borderColor=f.color; el.style.background="var(--bg-elevated)"; el.style.transform="translateY(-2px)"; }}
                   onMouseLeave={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.borderColor="var(--border)"; el.style.background="var(--bg-card)"; el.style.transform="translateY(0)"; }}
                 >
@@ -35,12 +35,11 @@ export function FeatureCards() {
                   <div style={{ width:40, height:40, background:f.colorDim, border:`1px solid ${f.color}30`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:14 }}>
                     <Icon size={20} style={{ color:f.color }}/>
                   </div>
-                  {f.soon && <div style={{ position:"absolute", top:16, right:16, fontSize:10, fontWeight:600, letterSpacing:"0.06em", background:"var(--bg-overlay)", color:"var(--text-muted)", border:"1px solid var(--border)", borderRadius:20, padding:"2px 8px" }}>COMING SOON</div>}
                   <h3 style={{ fontSize:16, fontWeight:600, marginBottom:8, color:"var(--text-primary)" }}>{f.title}</h3>
                   <p style={{ fontSize:13, color:"var(--text-secondary)", lineHeight:1.6, marginBottom:16 }}>{f.description}</p>
                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <span style={{ fontSize:11, color:f.soon?"var(--text-muted)":f.color, fontFamily:"monospace", fontWeight:500 }}>{f.stat}</span>
-                    {!f.soon && <ArrowRight size={14} style={{ color:f.color, opacity:0.7 }}/>}
+                    <span style={{ fontSize:11, color:f.color, fontFamily:"monospace", fontWeight:500 }}>{f.stat}</span>
+                    <ArrowRight size={14} style={{ color:f.color, opacity:0.7 }}/>
                   </div>
                 </div>
               </Link>
