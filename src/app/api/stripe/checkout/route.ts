@@ -3,6 +3,8 @@ import Stripe from "stripe";
 import { auth } from "@/lib/auth";
 import { getUserById, setStripeCustomerId } from "@/lib/azure-db";
 
+export const dynamic = "force-dynamic";
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const PRICE_IDS: Record<string, string | undefined> = {

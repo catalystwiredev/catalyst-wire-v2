@@ -3,6 +3,8 @@ import Stripe from "stripe";
 import { auth } from "@/lib/auth";
 import { getUserById } from "@/lib/azure-db";
 
+export const dynamic = "force-dynamic";
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST() {
