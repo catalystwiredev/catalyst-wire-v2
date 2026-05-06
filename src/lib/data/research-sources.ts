@@ -69,7 +69,7 @@ export const RESEARCH_SOURCES: ResearchSource[] = [
   },
   {
     id: "ssrn", name: "SSRN — Social Science Research Network", shortName: "SSRN",
-    url: "https://www.ssrn.com/index.cfm/en/fin/",
+    url: "https://www.ssrn.com/ssrn/",
     category: "academic", free: true, iconColor: "#7b2d8b",
     description: "Largest preprint repository for finance and economics research. Thousands of working papers before journal publication.",
     bestFor: ["Academic finance research", "Factor investing", "Market microstructure", "Quantitative strategies"],
@@ -97,7 +97,7 @@ export const RESEARCH_SOURCES: ResearchSource[] = [
   },
   {
     id: "edgar", name: "SEC EDGAR Full-Text Search", shortName: "EDGAR",
-    url: "https://efts.sec.gov/LATEST/search-index",
+    url: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=&CIK=&type=10-K&dateb=&owner=include&count=40",
     category: "data", free: true, iconColor: "#0099ff",
     description: "Search the full text of all SEC filings — 10-K, 10-Q, 8-K, S-1, Form 4, DEF 14A. Primary source for all regulatory disclosures.",
     bestFor: ["10-K annual reports", "Insider filings", "Proxy statements", "IPO prospectuses"],

@@ -29,13 +29,13 @@ export async function GET(req: NextRequest) {
     const catalysts = filings.map((f) => ({
       id:          f.id,
       type:        "sec_filing",
-      form:        f.form,
-      entity:      f.entity_name,
+      form:        f.formType,
+      entity:      f.companyName,
       ticker:      f.ticker ?? ticker,
-      date:        f.file_date,
-      period:      f.period,
-      url:         f.url,
-      verdict:     f.form === "4" ? "Insider Activity" : f.form === "8-K" ? "Material Event" : "Regulatory Filing",
+      date:        f.filedAt,
+      period:      f.periodOfReport,
+      url:         f.linkToFilingDetails,
+      verdict:     f.formType === "4" ? "Insider Activity" : f.formType === "8-K" ? "Material Event" : "Regulatory Filing",
     }));
 
     const transactions = insiders.map((t, i) => ({

@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     }
 
     const sorted = filings
-      .sort((a, b) => b.file_date.localeCompare(a.file_date))
+      .sort((a, b) => (b.filedAt ?? "").localeCompare(a.filedAt ?? ""))
       .slice(0, 40);
 
     return NextResponse.json({ filings: sorted, generated: new Date().toISOString() });

@@ -25,18 +25,21 @@ export function InsiderTradesTable({ trades }: { trades: any[] }) {
   }
 
   return (
-    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 14, overflow: "hidden" }}>
-      <div style={{ padding: "14px 20px", background: "var(--bg-surface)", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 13, fontWeight: 600 }}>Recent Form 4 Filings</div>
-        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{trades.length} transactions · Click any row to expand</div>
+    <div style={{ background:"rgba(8,14,26,0.70)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, overflow:"hidden", boxShadow:"0 4px 32px rgba(0,0,0,0.4)" }}>
+      <div style={{ padding:"14px 20px", background:"rgba(4,8,18,0.60)", borderBottom:"1px solid rgba(255,255,255,0.05)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <span className="live-dot"/>
+          <span style={{ fontSize:13, fontWeight:700, letterSpacing:"-0.01em" }}>Recent Form 4 Filings</span>
+        </div>
+        <div style={{ fontSize:11, color:"var(--text-muted)", fontFamily:"monospace" }}>{trades.length} transactions · click to expand</div>
       </div>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ borderBottom: "1px solid var(--border)" }}>
-              <th style={{ padding: "8px 12px", width: 28 }}/>
+            <tr>
+              <th style={{ width:28 }}/>
               {["Company", "Ticker", "Filed", "Price", "Chg%", "Filing"].map(h => (
-                <th key={h} style={{ padding: "8px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
+                <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>

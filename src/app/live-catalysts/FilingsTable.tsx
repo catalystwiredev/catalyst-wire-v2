@@ -47,15 +47,15 @@ export function FilingsTable({ visible, locked }: { visible: EdgarFiling[]; lock
       </div>
 
       {visible.map(f => (
-        <a key={f.id} href={f.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+        <a key={f.id} href={f.linkToFilingDetails} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
           <div style={{ display: "grid", gridTemplateColumns: "70px 100px 1fr 140px 90px", padding: "11px 16px", borderBottom: "1px solid var(--border)", alignItems: "center", fontSize: 13 }}
             onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-elevated)")}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-            <div><FormBadge form={f.form}/></div>
-            <div style={{ fontFamily: "monospace", fontSize: 12, color: "var(--text-secondary)" }}>{dayjs(f.file_date).format("MMM D")}</div>
-            <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-primary)", fontWeight: 500 }}>{f.entity_name}</div>
-            <div><VerdictBadge form={f.form}/></div>
-            <div style={{ fontFamily: "monospace", fontSize: 11, color: "var(--text-muted)" }}>{f.period || "—"}</div>
+            <div><FormBadge form={f.formType}/></div>
+            <div style={{ fontFamily: "monospace", fontSize: 12, color: "var(--text-secondary)" }}>{f.filedAt ? dayjs(f.filedAt).format("MMM D") : "—"}</div>
+            <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-primary)", fontWeight: 500 }}>{f.companyName}</div>
+            <div><VerdictBadge form={f.formType}/></div>
+            <div style={{ fontFamily: "monospace", fontSize: 11, color: "var(--text-muted)" }}>{f.periodOfReport || "—"}</div>
           </div>
         </a>
       ))}

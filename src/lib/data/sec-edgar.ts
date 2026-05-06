@@ -8,17 +8,16 @@
 
 const EDGAR_BASE = "https://efts.sec.gov/LATEST/search-index";
 const EDGAR_SUBMISSIONS = "https://data.sec.gov/submissions";
-const EDGAR_COMPANY = "https://efts.sec.gov/LATEST/search-index?q=%22";
 
 export interface EdgarFiling {
-  id:           string;
-  entity_name:  string;
-  file_date:    string;
-  form:         string;
-  period:       string;
-  ticker?:      string;
-  cik:          string;
-  url:          string;
+  id:                  string;
+  companyName:         string;
+  formType:            string;
+  filedAt:             string;  // ISO 8601
+  periodOfReport:      string;
+  ticker?:             string;
+  linkToFilingDetails: string;
+  description:         string;
 }
 
 /** Search EDGAR full-text for recent filings by form type */
@@ -30,13 +29,10 @@ export async function searchFilings(opts: {
 }): Promise<EdgarFiling[]> {
   const { query = "", forms = [], dateFrom, limit = 20 } = opts;
 
-  // Build clean query params
   const clean = new URLSearchParams();
   if (query)    clean.set("q",      query);
   if (dateFrom) { clean.set("dateRange", "custom"); clean.set("startdt", dateFrom); }
   if (forms.length) clean.set("forms", forms.join(","));
-  clean.set("hits.hits._source", "entity_name,file_date,form_type,period_of_report");
-  clean.set("hits.hits.total.relation", "gte");
 
   const url = `${EDGAR_BASE}?${clean.toString()}`;
 
@@ -48,27 +44,34 @@ export async function searchFilings(opts: {
 
   return hits.slice(0, limit).map((h: any) => {
     const s = h._source ?? {};
+    const cik = s.entity_id ?? s.file_num ?? "";
+    const accNum = (h._id ?? "").replace(/-/g, "");
+    const filingIndexUrl = cik && accNum
+      ? `https://www.sec.gov/Archives/edgar/data/${cik}/${accNum}/${accNum}-index.htm`
+      : `https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=${s.form_type ?? ""}&dateb=&owner=include&count=40`;
     return {
-      id:          h._id ?? "",
-      entity_name: s.entity_name ?? s.display_names?.[0]?.name ?? "",
-      file_date:   s.file_date ?? "",
-      form:        s.form_type ?? "",
-      period:      s.period_of_report ?? "",
-      ticker:      s.ticker ?? undefined,
-      cik:         s.entity_id ?? "",
-      url:         `https://www.sec.gov/Archives/edgar/data/${s.entity_id}/${h._id?.replace(/-/g, "")}.htm`,
+      id:                  h._id ?? "",
+      companyName:         s.entity_name ?? s.display_names?.[0]?.name ?? "",
+      formType:            s.form_type ?? "",
+      filedAt:             s.file_date ? new Date(s.file_date).toISOString() : "",
+      periodOfReport:      s.period_of_report ?? "",
+      ticker:              s.tickers?.[0] ?? s.ticker ?? undefined,
+      linkToFilingDetails: filingIndexUrl,
+      description:         s.form_type ? `${s.form_type} filed by ${s.entity_name ?? "unknown entity"}` : "",
     };
   });
 }
 
 /** Fetch recent Form 4 insider trade filings (free, public) */
 export async function getRecentForm4s(limit = 20): Promise<EdgarFiling[]> {
-  return searchFilings({ forms: ["4"], limit });
+  const since = new Date(Date.now() - 45 * 86400000).toISOString().split("T")[0];
+  return searchFilings({ forms: ["4"], dateFrom: since, limit });
 }
 
 /** Fetch recent 8-K material event filings */
 export async function getRecent8Ks(limit = 20): Promise<EdgarFiling[]> {
-  return searchFilings({ forms: ["8-K"], limit });
+  const since = new Date(Date.now() - 45 * 86400000).toISOString().split("T")[0];
+  return searchFilings({ forms: ["8-K"], dateFrom: since, limit });
 }
 
 /** Get company CIK from ticker symbol via EDGAR company search */

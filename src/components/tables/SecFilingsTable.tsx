@@ -15,14 +15,25 @@ function relTime(iso: string) {
 }
 
 const FORM_LABELS: Record<string, string> = {
-  "8-K":  "Material event disclosure",
-  "4":    "Insider transaction",
-  "10-K": "Annual report",
-  "10-Q": "Quarterly report",
-  "S-1":  "IPO registration",
-  "SC 13G": "Beneficial ownership (passive)",
-  "SC 13D": "Beneficial ownership (active)",
+  "8-K":     "Material event disclosure",
+  "4":       "Insider transaction",
+  "10-K":    "Annual report",
+  "10-Q":    "Quarterly report",
+  "S-1":     "IPO registration",
+  "SC 13G":  "Beneficial ownership (passive)",
+  "SC 13D":  "Beneficial ownership (active)",
   "DEF 14A": "Proxy statement",
+};
+
+const FORM_COLORS: Record<string, string> = {
+  "8-K":     "#f59e0b",
+  "4":       "#0099ff",
+  "10-K":    "#a78bfa",
+  "10-Q":    "#60a5fa",
+  "S-1":     "#f472b6",
+  "SC 13G":  "#34d399",
+  "SC 13D":  "#00e676",
+  "DEF 14A": "#94a3b8",
 };
 
 export function SecFilingsTable({ filings }: { filings: any[] }) {
@@ -37,74 +48,89 @@ export function SecFilingsTable({ filings }: { filings: any[] }) {
   }
 
   return (
-    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 14, overflow: "hidden" }}>
-      <div style={{ padding: "14px 20px", background: "var(--bg-surface)", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 13, fontWeight: 600 }}>Latest SEC Filings</div>
-        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{filings.length} filings · Click any row to expand</div>
+    <div style={{ background:"rgba(8,14,26,0.70)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, overflow:"hidden", boxShadow:"0 4px 32px rgba(0,0,0,0.4)" }}>
+      <div style={{ padding:"14px 20px", background:"rgba(4,8,18,0.60)", borderBottom:"1px solid rgba(255,255,255,0.05)", display:"flex", justifyContent:"space-between", alignItems:"center", backdropFilter:"blur(8px)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <span className="live-dot"/>
+          <span style={{ fontSize:13, fontWeight:700, letterSpacing:"-0.01em" }}>SEC Filings</span>
+        </div>
+        <div style={{ fontSize:11, color:"var(--text-muted)", fontFamily:"monospace" }}>{filings.length} filings · click to expand</div>
       </div>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <div style={{ overflowX:"auto" }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ borderBottom: "1px solid var(--border)" }}>
-              <th style={{ padding: "8px 12px", width: 28 }}/>
+            <tr>
+              <th style={{ width:28 }}/>
               {["Form", "Company", "Filed", "Description"].map(h => (
-                <th key={h} style={{ padding: "8px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
+                <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filings.map((f: any, i: number) => {
               const open = expanded.has(i);
+              const fColor = FORM_COLORS[f.formType ?? ""] ?? "var(--text-muted)";
               return (
                 <>
-                  <tr key={`r-${i}`} onClick={() => toggle(i)} style={{ borderBottom: open ? "none" : "1px solid var(--border)", cursor: "pointer", background: open ? "var(--bg-elevated)" : "transparent", transition: "background 0.15s" }}>
-                    <td style={{ padding: "10px 12px", color: "var(--text-muted)" }}>
-                      {open ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
+                  <tr
+                    key={`r-${i}`}
+                    onClick={() => toggle(i)}
+                    className="glass-row"
+                    style={{ cursor:"pointer", background: open ? "rgba(0,153,255,0.05)" : "transparent" }}
+                  >
+                    <td style={{ paddingLeft:14, paddingRight:6, color:"var(--text-muted)", width:28 }}>
+                      {open ? <ChevronDown size={13}/> : <ChevronRight size={13}/>}
                     </td>
-                    <td style={{ padding: "10px 16px" }}>
-                      <span style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, background: "var(--accent-dim)", color: "var(--accent)", border: "1px solid rgba(0,153,255,0.25)", borderRadius: 5, padding: "1px 6px", whiteSpace: "nowrap" }}>
+                    <td>
+                      <span style={{ fontFamily:"monospace", fontSize:11, fontWeight:700, color:fColor, background:`${fColor}15`, border:`1px solid ${fColor}30`, borderRadius:5, padding:"2px 7px", whiteSpace:"nowrap", boxShadow:`0 0 8px ${fColor}20` }}>
                         {f.formType ?? "—"}
                       </span>
                     </td>
-                    <td style={{ padding: "10px 16px", fontFamily: "monospace", fontWeight: 600, color: "var(--accent)", maxWidth: 200 }}>
+                    <td style={{ fontFamily:"monospace", fontWeight:600, color:"var(--accent)", maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                       {f.companyName ?? f.entityName ?? "—"}
                     </td>
-                    <td style={{ padding: "10px 16px", fontSize: 11, fontFamily: "monospace", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                    <td style={{ fontSize:11, fontFamily:"monospace", color:"var(--text-secondary)", whiteSpace:"nowrap" }}>
                       {relTime(f.filedAt)}
                     </td>
-                    <td style={{ padding: "10px 16px", color: "var(--text-secondary)", fontSize: 12, maxWidth: 380, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <td style={{ color:"var(--text-secondary)", fontSize:12, maxWidth:380, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                       {f.description ?? f.periodOfReport ?? "—"}
                     </td>
                   </tr>
+
                   {open && (
-                    <tr key={`e-${i}`} style={{ borderBottom: "1px solid var(--border)" }}>
-                      <td colSpan={5} style={{ padding: "0 16px 16px 48px", background: "var(--bg-elevated)" }}>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, paddingTop: 12 }}>
+                    <tr key={`e-${i}`}>
+                      <td colSpan={5} style={{ padding:"0 16px 18px 48px", background:"rgba(0,153,255,0.03)", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:14, paddingTop:14 }}>
                           <div>
-                            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>Form Type</div>
-                            <div style={{ fontSize: 13, fontWeight: 600 }}>{f.formType}</div>
-                            <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>{FORM_LABELS[f.formType ?? ""] ?? "SEC regulatory filing"}</div>
+                            <div style={{ fontSize:9, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--text-muted)", marginBottom:5 }}>Form Type</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:fColor }}>{f.formType}</div>
+                            <div style={{ fontSize:11, color:"var(--text-secondary)", marginTop:3 }}>{FORM_LABELS[f.formType ?? ""] ?? "SEC regulatory filing"}</div>
                           </div>
                           <div>
-                            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>Filer</div>
-                            <div style={{ fontSize: 13 }}>{f.companyName ?? f.entityName ?? "—"}</div>
-                            {f.ticker && <div style={{ fontSize: 11, fontFamily: "monospace", color: "var(--accent)", marginTop: 2 }}>{f.ticker}</div>}
+                            <div style={{ fontSize:9, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--text-muted)", marginBottom:5 }}>Filer</div>
+                            <div style={{ fontSize:13, fontWeight:500 }}>{f.companyName ?? f.entityName ?? "—"}</div>
+                            {f.ticker && <div style={{ fontSize:11, fontFamily:"monospace", color:"var(--accent)", marginTop:3, letterSpacing:"0.05em" }}>${f.ticker}</div>}
                           </div>
                           <div>
-                            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>Period</div>
-                            <div style={{ fontSize: 13 }}>{f.periodOfReport ?? "—"}</div>
-                            <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>Filed: {f.filedAt ? new Date(f.filedAt).toLocaleString() : "—"}</div>
+                            <div style={{ fontSize:9, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--text-muted)", marginBottom:5 }}>Period</div>
+                            <div style={{ fontSize:13 }}>{f.periodOfReport ?? "—"}</div>
+                            <div style={{ fontSize:11, color:"var(--text-secondary)", marginTop:3 }}>Filed: {f.filedAt ? new Date(f.filedAt).toLocaleDateString() : "—"}</div>
                           </div>
                           {f.description && (
-                            <div style={{ gridColumn: "1 / -1" }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>Description</div>
-                              <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>{f.description}</div>
+                            <div style={{ gridColumn:"1 / -1" }}>
+                              <div style={{ fontSize:9, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--text-muted)", marginBottom:5 }}>Description</div>
+                              <div style={{ fontSize:12, color:"var(--text-secondary)", lineHeight:1.7 }}>{f.description}</div>
                             </div>
                           )}
                           {f.linkToFilingDetails && (
-                            <div style={{ gridColumn: "1 / -1", paddingTop: 4 }}>
-                              <a href={f.linkToFilingDetails} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--accent)", fontSize: 12, fontWeight: 600, textDecoration: "none", background: "var(--accent-dim)", border: "1px solid var(--accent-glow)", borderRadius: 7, padding: "5px 12px" }}>
-                                <ExternalLink size={12}/> View on SEC EDGAR
+                            <div style={{ gridColumn:"1 / -1", paddingTop:4 }}>
+                              <a
+                                href={f.linkToFilingDetails}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ display:"inline-flex", alignItems:"center", gap:7, color:"#fff", fontSize:12, fontWeight:600, textDecoration:"none", background:"linear-gradient(135deg, rgba(0,153,255,0.8), rgba(0,102,204,0.8))", border:"1px solid rgba(0,153,255,0.3)", borderRadius:8, padding:"6px 14px", boxShadow:"0 0 16px rgba(0,153,255,0.2)", transition:"box-shadow 0.15s" }}
+                              >
+                                <ExternalLink size={11}/> View on SEC EDGAR
                               </a>
                             </div>
                           )}

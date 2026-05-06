@@ -1,14 +1,20 @@
 import { getNews } from "@/lib/data/marketaux";
 import { getMarketNews } from "@/lib/data/finnhub";
 import { NewsClient } from "./NewsClient";
+import { DataPageHeader } from "@/components/DataPageHeader";
+import { ScrollReveal } from "@/components/ScrollReveal";
+import { Newspaper } from "lucide-react";
+import { auth } from "@/lib/auth";
 
 export const revalidate = 120;
 
 export default async function NewsPage() {
-  const [mxArticles, fhArticles] = await Promise.all([
+  const [session, mxArticles, fhArticles] = await Promise.all([
+    auth(),
     getNews({ limit: 20 }).catch(() => []),
     getMarketNews("general").catch(() => []),
   ]);
+  const isPremium = (session?.user as any)?.plan !== "free";
 
   const combined = [
     ...mxArticles.map((a) => ({
@@ -28,14 +34,35 @@ export default async function NewsPage() {
     .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
     .slice(0, 30);
 
+  const lockedCount = isPremium ? 0 : Math.max(0, combined.length - 6);
+
+  const positiveCount = combined.filter(a => a.sentiment === "positive" || (a.score ?? 0) > 0).length;
+  const negativeCount = combined.filter(a => a.sentiment === "negative" || (a.score ?? 0) < 0).length;
+
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 72px" }}>
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 8 }}>Intelligence Feed</div>
-        <h1 style={{ fontSize: "clamp(22px,3vw,36px)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8 }}>News & Market Intelligence</h1>
-        <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>AI-scored headlines across stocks, biotech, crypto, earnings, and congressional disclosures.</p>
-      </div>
-      <NewsClient articles={combined} lockedCount={Math.max(0, combined.length - 6)} />
+      <ScrollReveal>
+        <DataPageHeader
+          label="Intelligence Feed · Live"
+          labelColor="#0090f0"
+          icon={Newspaper}
+          iconColor="#0090f0"
+          iconGlow="rgba(0,144,240,0.35)"
+          title="News & Market Intelligence"
+          description="AI-scored headlines across stocks, biotech, crypto, earnings, and congressional disclosures — from Marketaux and Finnhub in real time."
+          stats={[
+            { label:"Total Articles",  value: combined.length,  color:"#0090f0" },
+            { label:"Bullish",         value: positiveCount,    color:"#00e676" },
+            { label:"Bearish",         value: negativeCount,    color:"#ff4d4d" },
+          ]}
+          isPremium={isPremium}
+          upgradeHref="/register?plan=alpha"
+          upgradeLabel="Unlock full feed"
+        />
+      </ScrollReveal>
+      <ScrollReveal delay={150}>
+        <NewsClient articles={combined} lockedCount={lockedCount} />
+      </ScrollReveal>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getServerSession } from "next-auth";
 import bcrypt from "bcryptjs";
-import { getUserByEmail } from "./azure-db";
+import { getUserByEmail, getUserById } from "./azure-db";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -47,9 +47,22 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id          = token.id;
-        (session.user as any).plan        = token.plan;
-        (session.user as any).plan_status = token.plan_status;
+        session.user.id = token.id;
+        // Always re-read plan from DB so Stripe webhook upgrades reflect immediately
+        // without requiring the user to log out and back in
+        if (token.id) {
+          try {
+            const fresh = await getUserById(token.id);
+            session.user.plan        = fresh?.plan        ?? token.plan        ?? "free";
+            session.user.plan_status = fresh?.plan_status ?? token.plan_status ?? "active";
+          } catch {
+            session.user.plan        = token.plan        ?? "free";
+            session.user.plan_status = token.plan_status ?? "active";
+          }
+        } else {
+          session.user.plan        = token.plan        ?? "free";
+          session.user.plan_status = token.plan_status ?? "active";
+        }
       }
       return session;
     },
