@@ -2,6 +2,8 @@ import azure.functions as func
 import logging
 import os
 import json
+import urllib.request
+import urllib.error
 from datetime import datetime, timedelta, timezone
 from huggingface_hub import InferenceClient
 from alpaca.data.historical import StockHistoricalDataClient
@@ -143,6 +145,58 @@ def parse_momentum_signal(forecast: list, last_price: float) -> dict | None:
         return None
 
 
+# ── Ingest: POST signal to Catalyst Wire API ─────────────────────────────────
+def post_signal_to_api(signal: dict, last_price: float, model: str = "chronos-bolt-small") -> bool:
+    """
+    POST the parsed signal to the Catalyst Wire Next.js API at /api/signals/ingest.
+    The API persists to Azure SQL and broadcasts via Web PubSub.
+
+    Auth: X-Cron-Secret header. Best-effort — failures don't break the harvester tick.
+    """
+    api_url = os.environ.get("CATALYST_API_URL", "").rstrip("/")
+    secret  = os.environ.get("CRON_SECRET", "")
+
+    if not api_url or not secret:
+        logging.warning("[harvester] CATALYST_API_URL or CRON_SECRET missing — skipping ingest")
+        return False
+
+    payload = {
+        "symbol":      signal["symbol"],
+        "direction":   signal["direction"],
+        "confidence":  signal["confidence"],
+        "last_price":  round(last_price, 4),
+        "mean_target": signal["mean_target"],
+        "pct_change":  signal["pct_change"],
+        "bull_range":  signal["bull_range"],
+        "bear_range":  signal["bear_range"],
+        "steps":       signal["steps"],
+        "model":       model,
+    }
+
+    req = urllib.request.Request(
+        f"{api_url}/api/signals/ingest",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type":   "application/json",
+            "X-Cron-Secret":  secret,
+            "User-Agent":     "CatalystHarvester/1.0",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            logging.info(f"[harvester] Ingest OK — id={data.get('id', '?')}")
+            return True
+    except urllib.error.HTTPError as e:
+        logging.error(f"[harvester] Ingest HTTP {e.code}: {e.read().decode(errors='replace')[:200]}")
+        return False
+    except Exception as e:
+        logging.error(f"[harvester] Ingest error: {e}")
+        return False
+
+
 # ── Timer Trigger ─────────────────────────────────────────────────────────────
 @app.schedule(schedule="0 */1 * * * *", arg_name="myTimer", run_on_startup=True)
 def catalyst_harvester_timer(myTimer: func.TimerRequest) -> None:
@@ -158,15 +212,20 @@ def catalyst_harvester_timer(myTimer: func.TimerRequest) -> None:
         logging.warning("[harvester] No Chronos forecast — aborting tick")
         return
 
-    signal = parse_momentum_signal(forecast, last_price=closes[-1])
-    if signal:
-        logging.info(
-            f"[harvester] {signal['symbol']} | "
-            f"{signal['direction']} | "
-            f"Confidence: {signal['confidence']}% | "
-            f"Target: ${signal['mean_target']} "
-            f"({'+' if signal['pct_change'] >= 0 else ''}{signal['pct_change']}%) | "
-            f"Range: ${signal['bear_range']} – ${signal['bull_range']}"
-        )
-    else:
+    last_price = closes[-1]
+    signal = parse_momentum_signal(forecast, last_price=last_price)
+    if not signal:
         logging.warning("[harvester] Could not parse momentum signal")
+        return
+
+    logging.info(
+        f"[harvester] {signal['symbol']} | "
+        f"{signal['direction']} | "
+        f"Confidence: {signal['confidence']}% | "
+        f"Target: ${signal['mean_target']} "
+        f"({'+' if signal['pct_change'] >= 0 else ''}{signal['pct_change']}%) | "
+        f"Range: ${signal['bear_range']} – ${signal['bull_range']}"
+    )
+
+    # Persist + broadcast via Catalyst Wire API
+    post_signal_to_api(signal, last_price=last_price, model="chronos-bolt-small")

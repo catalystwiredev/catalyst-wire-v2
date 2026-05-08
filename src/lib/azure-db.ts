@@ -152,6 +152,96 @@ export async function saveContactMessage(name: string, email: string, subject: s
   });
 }
 
+// ── Signals ────────────────────────────────────────────────────────────────
+export interface Signal {
+  id:           string;
+  symbol:       string;
+  ts:           string;        // ISO 8601 UTC
+  direction:    "UP" | "DOWN";
+  confidence:   number;        // 0-100
+  last_price:   number;
+  mean_target:  number;
+  pct_change:   number;        // signed
+  bull_range:   number;
+  bear_range:   number;
+  steps:        number;
+  model:        string;
+  created_at:   string;
+}
+
+export async function insertSignal(s: {
+  symbol:      string;
+  direction:   "UP" | "DOWN";
+  confidence:  number;
+  last_price:  number;
+  mean_target: number;
+  pct_change:  number;
+  bull_range:  number;
+  bear_range:  number;
+  steps:       number;
+  model:       string;
+}): Promise<string> {
+  const conn = await getConnection();
+  return new Promise((resolve, reject) => {
+    let newId = "";
+    const req = new Request(
+      `INSERT INTO Signals (symbol, direction, confidence, last_price, mean_target, pct_change, bull_range, bear_range, steps, model)
+       OUTPUT INSERTED.id
+       VALUES (@symbol, @direction, @confidence, @last_price, @mean_target, @pct_change, @bull_range, @bear_range, @steps, @model)`,
+      (err) => { conn.close(); if (err) reject(err); else resolve(newId); }
+    );
+    req.addParameter("symbol",      TYPES.NVarChar, s.symbol.toUpperCase());
+    req.addParameter("direction",   TYPES.NVarChar, s.direction);
+    req.addParameter("confidence",  TYPES.Int,      Math.max(0, Math.min(100, Math.round(s.confidence))));
+    req.addParameter("last_price",  TYPES.Float,    s.last_price);
+    req.addParameter("mean_target", TYPES.Float,    s.mean_target);
+    req.addParameter("pct_change",  TYPES.Float,    s.pct_change);
+    req.addParameter("bull_range",  TYPES.Float,    s.bull_range);
+    req.addParameter("bear_range",  TYPES.Float,    s.bear_range);
+    req.addParameter("steps",       TYPES.Int,      s.steps);
+    req.addParameter("model",       TYPES.NVarChar, s.model);
+    req.on("row", (cols) => { newId = cols[0].value; });
+    conn.execSql(req);
+  });
+}
+
+export async function getRecentSignals(opts: { limit?: number; minConfidence?: number } = {}): Promise<Signal[]> {
+  const { limit = 50, minConfidence = 0 } = opts;
+  const conn = await getConnection();
+  return new Promise((resolve, reject) => {
+    const rows: Signal[] = [];
+    const req = new Request(
+      `SELECT TOP (@limit) id, symbol, ts, direction, confidence, last_price, mean_target, pct_change, bull_range, bear_range, steps, model, created_at
+       FROM Signals
+       WHERE confidence >= @minConfidence
+       ORDER BY ts DESC`,
+      (err) => { conn.close(); if (err) reject(err); else resolve(rows); }
+    );
+    req.addParameter("limit",         TYPES.Int, Math.min(limit, 500));
+    req.addParameter("minConfidence", TYPES.Int, minConfidence);
+    req.on("row", (cols) => { const r: any = {}; cols.forEach((c: any) => { r[c.metadata.colName] = c.value; }); rows.push(r); });
+    conn.execSql(req);
+  });
+}
+
+export async function getSignalsForSymbol(symbol: string, limit = 100): Promise<Signal[]> {
+  const conn = await getConnection();
+  return new Promise((resolve, reject) => {
+    const rows: Signal[] = [];
+    const req = new Request(
+      `SELECT TOP (@limit) id, symbol, ts, direction, confidence, last_price, mean_target, pct_change, bull_range, bear_range, steps, model, created_at
+       FROM Signals
+       WHERE symbol = @symbol
+       ORDER BY ts DESC`,
+      (err) => { conn.close(); if (err) reject(err); else resolve(rows); }
+    );
+    req.addParameter("symbol", TYPES.NVarChar, symbol.toUpperCase());
+    req.addParameter("limit",  TYPES.Int,      Math.min(limit, 1000));
+    req.on("row", (cols) => { const r: any = {}; cols.forEach((c: any) => { r[c.metadata.colName] = c.value; }); rows.push(r); });
+    conn.execSql(req);
+  });
+}
+
 export interface WatchlistItem {
   id: string;
   symbol: string;
