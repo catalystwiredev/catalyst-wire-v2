@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const body = await req.text();
   const sig  = req.headers.get("stripe-signature") ?? "";
 
-  let event: Stripe.Event;
+  let event: any;
   try {
     event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch (err) {
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const cs = event.data.object as Stripe.Checkout.Session;
+        const cs = event.data.object as any;
         if (cs.mode !== "subscription") break;
         const customerId = cs.customer as string;
         const subId      = cs.subscription as string;
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "customer.subscription.updated": {
-        const sub     = event.data.object as Stripe.Subscription;
+        const sub     = event.data.object as any;
         const priceId = sub.items.data[0]?.price.id ?? "";
         const plan    = PLAN_MAP[priceId] ?? "alpha";
         const status  = sub.status === "active" || sub.status === "trialing" ? "active" : "inactive";
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "customer.subscription.deleted": {
-        const sub = event.data.object as Stripe.Subscription;
+        const sub = event.data.object as any;
         await updateUserPlan(sub.customer as string, "free", "inactive", "");
         break;
       }

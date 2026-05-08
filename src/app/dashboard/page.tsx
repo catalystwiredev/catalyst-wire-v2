@@ -33,7 +33,7 @@ export default async function DashboardPage() {
   const bullish  = catalysts.filter((c: any) => (c.Verdict ?? c.verdict) === "Bullish").length;
   const bearish  = catalysts.filter((c: any) => (c.Verdict ?? c.verdict) === "Bearish").length;
   const avgScore = catalysts.length
-    ? Math.round(catalysts.reduce((a: number, c: any) => a + (c.ImpactScore ?? c.impactScore ?? 0), 0) / catalysts.length)
+    ? Math.round((catalysts as any[]).reduce((a: number, c: any) => a + (c.ImpactScore ?? c.impactScore ?? 0), 0) / catalysts.length)
     : 0;
 
   const macro = macroRaw

@@ -76,7 +76,7 @@ export async function getTickerSentiment(symbol: string, limit = 20): Promise<{ 
   const bull    = articles.filter(a => a.sentiment === "positive").length;
   const bear    = articles.filter(a => a.sentiment === "negative").length;
   const neutral = articles.length - bull - bear;
-  const avgScore = articles.reduce((acc, a) => acc + a.sentiment_score, 0) / articles.length;
+  const avgScore = (articles as any[]).reduce((acc: number, a: any) => acc + (a.sentiment_score ?? 0), 0) / articles.length;
 
   return {
     bullishPct: Math.round((bull    / articles.length) * 100),
