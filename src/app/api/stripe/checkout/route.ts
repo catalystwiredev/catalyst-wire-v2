@@ -5,8 +5,6 @@ import { getUserById, setStripeCustomerId } from "@/lib/azure-db";
 
 export const dynamic = "force-dynamic";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 const PRICE_IDS: Record<string, string | undefined> = {
   alpha:         process.env.STRIPE_ALPHA_MONTHLY_PRICE_ID,
   alpha_annual:  process.env.STRIPE_ALPHA_ANNUAL_PRICE_ID,
@@ -15,6 +13,7 @@ const PRICE_IDS: Record<string, string | undefined> = {
 };
 
 export async function POST(req: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
   try {
     const session = await auth();
     if (!session?.user) {

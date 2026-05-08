@@ -4,16 +4,18 @@ import { updateUserPlan, setStripeCustomerId, getUserByEmail } from "@/lib/azure
 
 export const dynamic = "force-dynamic";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-const PLAN_MAP: Record<string, string> = {
-  [process.env.STRIPE_ALPHA_MONTHLY_PRICE_ID         ?? ""]: "alpha",
-  [process.env.STRIPE_ALPHA_ANNUAL_PRICE_ID          ?? ""]: "alpha",
-  [process.env.STRIPE_INSTITUTIONAL_MONTHLY_PRICE_ID ?? ""]: "institutional",
-  [process.env.STRIPE_INSTITUTIONAL_ANNUAL_PRICE_ID  ?? ""]: "institutional",
-};
+function getPlanMap(): Record<string, string> {
+  return {
+    [process.env.STRIPE_ALPHA_MONTHLY_PRICE_ID         ?? ""]: "alpha",
+    [process.env.STRIPE_ALPHA_ANNUAL_PRICE_ID          ?? ""]: "alpha",
+    [process.env.STRIPE_INSTITUTIONAL_MONTHLY_PRICE_ID ?? ""]: "institutional",
+    [process.env.STRIPE_INSTITUTIONAL_ANNUAL_PRICE_ID  ?? ""]: "institutional",
+  };
+}
 
 export async function POST(req: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+  const PLAN_MAP = getPlanMap();
   const body = await req.text();
   const sig  = req.headers.get("stripe-signature") ?? "";
 
