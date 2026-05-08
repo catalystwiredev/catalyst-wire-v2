@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getEarningsCalendar } from "@/lib/data/finnhub";
-import { searchDrugApplications, getDrugRecalls } from "@/lib/data/openfda";
+import { searchDrugApplications } from "@/lib/data/openfda";
 import { searchFilings } from "@/lib/data/sec-edgar";
 
 export const runtime = "nodejs";

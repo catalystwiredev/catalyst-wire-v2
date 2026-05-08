@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { FileText, TrendingDown, TrendingUp, ArrowRight } from "lucide-react";
+import { FileText, TrendingUp, ArrowRight } from "lucide-react";
 import dayjs from "dayjs";
 import type { EdgarFiling } from "@/lib/data/sec-edgar";
 

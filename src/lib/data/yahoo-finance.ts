@@ -28,6 +28,21 @@ export interface YFQuote {
   regularMarketDayLow:        number | null;
   marketCap:     number | null;
   currency:      string | null;
+
+  // Extended-hours fields — present when the upstream session is active.
+  // Pre-market: ~4 AM – 9:30 AM ET. Post-market: 4 PM – 8 PM ET.
+  preMarketPrice:          number | null;
+  preMarketChangePercent:  number | null;
+  preMarketTime:           string | null;     // ISO 8601
+  postMarketPrice:         number | null;
+  postMarketChangePercent: number | null;
+  postMarketTime:          string | null;
+}
+
+function asISO(d: unknown): string | null {
+  if (d instanceof Date) return d.toISOString();
+  if (typeof d === "string") return d;
+  return null;
 }
 
 export async function getYahooQuote(symbol: string): Promise<YFQuote | null> {
@@ -44,10 +59,53 @@ export async function getYahooQuote(symbol: string): Promise<YFQuote | null> {
       regularMarketDayLow:        q.regularMarketDayLow        ?? null,
       marketCap:                  q.marketCap                  ?? null,
       currency:                   q.currency                   ?? null,
+      preMarketPrice:             q.preMarketPrice             ?? null,
+      preMarketChangePercent:     q.preMarketChangePercent     ?? null,
+      preMarketTime:              asISO(q.preMarketTime),
+      postMarketPrice:            q.postMarketPrice            ?? null,
+      postMarketChangePercent:    q.postMarketChangePercent    ?? null,
+      postMarketTime:             asISO(q.postMarketTime),
     };
   } catch (err) {
     console.error("[yahoo-finance] quote failed:", symbol, err);
     return null;
+  }
+}
+
+/**
+ * Cross-session bar history including pre-market and after-hours candles.
+ * Use this as a richer alternative to Alpaca's IEX feed for the chart page.
+ *
+ * @param interval  "1m" | "2m" | "5m" | "15m" | "30m" | "1h" | "1d" (Yahoo enums)
+ * @param period1   start (Date or unix seconds) — defaults to 24h ago
+ * @param period2   end   (Date or unix seconds) — defaults to now
+ */
+export async function getYahooBars(symbol: string, opts: {
+  interval?: "1m" | "2m" | "5m" | "15m" | "30m" | "60m" | "1h" | "1d";
+  period1?:  Date | number;
+  period2?:  Date | number;
+} = {}): Promise<{ t: string; o: number; h: number; l: number; c: number; v: number }[]> {
+  const interval = opts.interval ?? "1m";
+  const period2  = opts.period2  ?? new Date();
+  const period1  = opts.period1  ?? new Date(Date.now() - 24 * 60 * 60_000);
+
+  try {
+    // yahoo-finance2 chart() returns quotes (regular + pre/post when includePrePost=true)
+    const r = await yf().chart(symbol.toUpperCase(), { period1, period2, interval, includePrePost: true });
+    const quotes = r?.quotes ?? [];
+    return quotes
+      .filter(q => q.open != null && q.high != null && q.low != null && q.close != null)
+      .map(q => ({
+        t: q.date instanceof Date ? q.date.toISOString() : String(q.date),
+        o: Number(q.open),
+        h: Number(q.high),
+        l: Number(q.low),
+        c: Number(q.close),
+        v: Number(q.volume ?? 0),
+      }));
+  } catch (err) {
+    console.error("[yahoo-finance] bars failed:", symbol, err);
+    return [];
   }
 }
 

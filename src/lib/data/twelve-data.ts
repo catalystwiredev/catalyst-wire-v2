@@ -62,13 +62,22 @@ export async function getTwelveDataQuote(symbol: string): Promise<TDQuote | null
 
 export interface TDBar { datetime: string; open: number; high: number; low: number; close: number; volume: number; }
 
-export async function getTwelveDataTimeSeries(symbol: string, interval: "1min" | "5min" | "15min" | "30min" | "1h" | "1day" = "1min", outputsize = 100): Promise<TDBar[]> {
+export async function getTwelveDataTimeSeries(
+  symbol: string,
+  interval: "1min" | "5min" | "15min" | "30min" | "1h" | "1day" = "1min",
+  outputsize = 100,
+  opts: { regularHoursOnly?: boolean } = {},
+): Promise<TDBar[]> {
   const apiKey = key();
   if (!apiKey) return [];
 
+  // Default to extended hours so pre-market and after-hours bars are included.
+  // Callers can opt back to regular hours via { regularHoursOnly: true }.
+  const extendedHours = opts.regularHoursOnly ? "false" : "true";
+
   try {
     const res = await fetch(
-      `${BASE}/time_series?symbol=${encodeURIComponent(symbol.toUpperCase())}&interval=${interval}&outputsize=${Math.min(outputsize, 5000)}&apikey=${apiKey}`,
+      `${BASE}/time_series?symbol=${encodeURIComponent(symbol.toUpperCase())}&interval=${interval}&outputsize=${Math.min(outputsize, 5000)}&extended_hours=${extendedHours}&apikey=${apiKey}`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];

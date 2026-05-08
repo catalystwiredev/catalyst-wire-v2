@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, Search, Star, TrendingUp, TrendingDown, Loader2, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Star, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 type AssetType = "stock" | "etf" | "crypto" | "forex" | "futures" | "option";

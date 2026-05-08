@@ -51,13 +51,24 @@ export interface TiingoIntradayBar {
   volume: number;
 }
 
-export async function getTiingoIntraday(symbol: string, opts: { resampleFreq?: "1min" | "5min" | "15min" | "30min" | "1hour"; startDate?: string; endDate?: string; limit?: number } = {}): Promise<TiingoIntradayBar[]> {
+export async function getTiingoIntraday(symbol: string, opts: {
+  resampleFreq?:    "1min" | "5min" | "15min" | "30min" | "1hour";
+  startDate?:       string;
+  endDate?:         string;
+  limit?:           number;
+  regularHoursOnly?: boolean;
+} = {}): Promise<TiingoIntradayBar[]> {
   if (!process.env.TIINGO_API_KEY) return [];
-  const { resampleFreq = "1min", startDate, endDate, limit = 100 } = opts;
+  const { resampleFreq = "1min", startDate, endDate, limit = 100, regularHoursOnly = false } = opts;
   try {
     const params = new URLSearchParams({ resampleFreq });
     if (startDate) params.set("startDate", startDate);
     if (endDate)   params.set("endDate", endDate);
+    // Default: include pre-market and after-hours bars; fill gaps for clean charts.
+    if (!regularHoursOnly) {
+      params.set("afterHours", "true");
+      params.set("forceFill",  "true");
+    }
     const res = await fetch(`${BASE}/iex/${symbol.toUpperCase()}/prices?${params}`, { headers: authHeader(), next: { revalidate: 60 } });
     if (!res.ok) return [];
     const arr = await res.json() as TiingoIntradayBar[];

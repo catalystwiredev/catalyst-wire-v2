@@ -225,14 +225,35 @@ def post_signal_to_api(signal: dict, last_price: float, model: str = "chronos-bo
         return False
 
 
+# ── Session helpers ───────────────────────────────────────────────────────────
+def is_us_extended_hours(ts: datetime) -> bool:
+    """
+    True when `ts` falls in the US extended trading window: Mon–Fri, 4 AM–8 PM ET.
+    Approximation uses UTC offsets; ignores DST edge cases (close enough for
+    log-noise gating). Crude but stdlib-only.
+    """
+    # Convert UTC -> ET. May–Nov is EDT (UTC-4), Dec–Mar is EST (UTC-5). Use -5 always
+    # as the conservative bound (stretches the window an hour each side).
+    et = ts - timedelta(hours=5)
+    if et.weekday() >= 5:
+        return False                # Sat/Sun
+    return 4 <= et.hour < 20        # 4 AM ET ≤ hour < 8 PM ET
+
+
 # ── Timer Trigger ─────────────────────────────────────────────────────────────
 @app.schedule(schedule="0 */1 * * * *", arg_name="myTimer", run_on_startup=True)
 def catalyst_harvester_timer(myTimer: func.TimerRequest) -> None:
-    logging.info(f"[harvester] Tick — {datetime.now(timezone.utc).isoformat()}")
+    now = datetime.now(timezone.utc)
+    logging.info(f"[harvester] Tick — {now.isoformat()}")
 
     closes = get_alpaca_bars()
     if not closes:
-        logging.warning("[harvester] No price data — aborting tick")
+        # Outside US extended-hours, empty bars are expected — log at debug level
+        # to avoid filling App Insights with overnight false alarms.
+        if is_us_extended_hours(now):
+            logging.warning("[harvester] No price data during extended hours — aborting tick")
+        else:
+            logging.info("[harvester] Outside US extended-hours window — skipping tick")
         return
 
     forecast = get_naive_forecast(closes, steps=5)

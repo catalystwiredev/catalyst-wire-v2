@@ -64,30 +64,3 @@ export function ScrollReveal({
     </div>
   );
 }
-
-/** Stagger a group of children with sequential delays */
-export function ScrollRevealGroup({
-  children,
-  baseDelay = 0,
-  stagger = 80,
-  direction = "up",
-  className,
-  style,
-}: {
-  children: ReactNode[];
-  baseDelay?: number;
-  stagger?: number;
-  direction?: Props["direction"];
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <>
-      {(children as ReactNode[]).map((child, i) => (
-        <ScrollReveal key={i} delay={baseDelay + i * stagger} direction={direction} className={className} style={style}>
-          {child}
-        </ScrollReveal>
-      ))}
-    </>
-  );
-}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { auth } from "@/lib/auth";
-import { getUserById, setStripeCustomerId } from "@/lib/azure-db";
+import { getUserById } from "@/lib/azure-db";
 
 export const dynamic = "force-dynamic";
 

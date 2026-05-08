@@ -16,7 +16,6 @@ const LABELS  = ["$5", "$10", "$15", "$25", "$50", "$100"];
 export default function DonatePage() {
   const [selected, setSelected] = useState(1500);
   const [loading, setLoading]   = useState(false);
-  const [success, setSuccess]   = useState(false);
   const [error, setError]       = useState("");
 
   async function checkout() {
