@@ -9,21 +9,43 @@ const TABS = [
   { id:"macro",       label:"Economic",   icon:Globe,      symbol:"FRED:DFF" },
 ] as const;
 
-function ChartWidget({ symbol }: { symbol:string }) {
+/**
+ * Tier-gated TradingView advanced chart.
+ *  - interactive=true  → full toolbar, symbol change, date ranges (Alpha+ feature)
+ *  - interactive=false → static read-only chart for free-tier visitors
+ *
+ * The parent (server component) decides via tier.ts:
+ *   <TradingViewChart interactive={tierAtLeast(session, "alpha")} />
+ */
+function ChartWidget({ symbol, interactive }: { symbol: string; interactive: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(()=>{
-    if(!ref.current) return;
-    ref.current.innerHTML="";
-    const s=document.createElement("script");
-    s.src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-    s.async=true;
-    s.innerHTML=JSON.stringify({ autosize:true, symbol, interval:"D", timezone:"America/New_York", theme:"dark", style:"1", locale:"en", withdateranges:true, hide_side_toolbar:false, allow_symbol_change:true, save_image:false, backgroundColor:"rgba(8,12,20,1)", gridColor:"rgba(255,255,255,0.04)" });
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.innerHTML = "";
+    const s = document.createElement("script");
+    s.src   = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    s.async = true;
+    s.innerHTML = JSON.stringify({
+      autosize:           true,
+      symbol,
+      interval:           "D",
+      timezone:           "America/New_York",
+      theme:              "dark",
+      style:              "1",
+      locale:             "en",
+      withdateranges:     interactive,
+      hide_side_toolbar:  !interactive,
+      allow_symbol_change:interactive,
+      save_image:         false,
+      backgroundColor:    "rgba(8,12,20,1)",
+      gridColor:          "rgba(255,255,255,0.04)",
+    });
     ref.current.appendChild(s);
-  },[symbol]);
+  }, [symbol, interactive]);
   return <div ref={ref} className="tradingview-widget-container" style={{ height:"100%", width:"100%" }}><div className="tradingview-widget-container__widget" style={{ height:"100%", width:"100%" }}/></div>;
 }
 
-export function TradingViewChart() {
+export function TradingViewChart({ interactive = true }: { interactive?: boolean } = {}) {
   const [active, setActive] = useState<string>("indexes");
   const tab = TABS.find(t=>t.id===active)!;
   return (
@@ -44,7 +66,7 @@ export function TradingViewChart() {
               );
             })}
           </div>
-          <div style={{ height:500 }}><ChartWidget symbol={tab.symbol}/></div>
+          <div style={{ height:500 }}><ChartWidget symbol={tab.symbol} interactive={interactive}/></div>
         </div>
         <p style={{ fontSize:11, color:"var(--text-muted)", marginTop:10, textAlign:"center" }}>Charts powered by TradingView. For informational purposes only. Not financial advice.</p>
       </div>

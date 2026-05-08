@@ -4,16 +4,21 @@ import { FeatureCards } from "@/components/home/FeatureCards";
 import { TierTable } from "@/components/home/TierTable";
 import { WhyDifferent } from "@/components/home/WhyDifferent";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { auth } from "@/lib/auth";
+import { tierAtLeast } from "@/lib/tier";
 import Link from "next/link";
 import { Heart, ArrowRight } from "lucide-react";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await auth();
+  const interactiveCharts = tierAtLeast(session, "alpha");
+
   return (
     <>
       <HeroSection/>
 
       <ScrollReveal delay={0}>
-        <TradingViewChart/>
+        <TradingViewChart interactive={interactiveCharts}/>
       </ScrollReveal>
 
       <ScrollReveal delay={0}>
