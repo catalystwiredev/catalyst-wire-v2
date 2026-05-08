@@ -1,6 +1,6 @@
 import { Connection, Request, TYPES } from "tedious";
 
-function getConnection(): Promise<Connection> {
+export function getConnection(): Promise<Connection> {
   return new Promise((resolve, reject) => {
     const conn = new Connection({
       server: process.env.AZURE_SQL_SERVER!,

@@ -1,0 +1,5 @@
+azure-functions
+huggingface_hub
+alpaca-py
+pandas
+numpy
