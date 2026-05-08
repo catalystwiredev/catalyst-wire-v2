@@ -40,3 +40,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 deploy.zip
+
+# Python (Azure Functions remote build only — never local)
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+*.log
