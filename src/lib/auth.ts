@@ -63,6 +63,14 @@ export const authOptions: NextAuthOptions = {
           session.user.plan        = token.plan        ?? "free";
           session.user.plan_status = token.plan_status ?? "active";
         }
+
+        // Dev mode: open every feature for any authenticated user.
+        // Flip OPEN_ALL_FEATURES to false in src/lib/tier.ts to enforce real plans.
+        const { OPEN_ALL_FEATURES } = await import("./tier");
+        if (OPEN_ALL_FEATURES) {
+          session.user.plan        = "institutional";
+          session.user.plan_status = "active";
+        }
       }
       return session;
     },
