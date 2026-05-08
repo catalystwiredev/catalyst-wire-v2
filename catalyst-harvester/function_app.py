@@ -43,8 +43,11 @@ def get_alpaca_bars(symbol: str = SYMBOL, limit: int = BAR_LIMIT) -> list[float]
             limit=limit,
             feed=DataFeed.IEX,   # Free plan only — SIP requires paid subscription
         )
-        bars   = client.get_stock_bars(request)
-        closes = [float(bar.close) for bar in bars[symbol]]
+        bars = client.get_stock_bars(request)
+        # bars is a BarSet whose underlying dict may omit the symbol entirely
+        # (sparse extended-hours, weekends, no IEX trades). Handle gracefully.
+        symbol_bars = bars.data.get(symbol, []) if hasattr(bars, "data") else []
+        closes = [float(b.close) for b in symbol_bars]
 
         logging.info(f"[harvester] Alpaca: {len(closes)} bars fetched for {symbol}")
         return closes
