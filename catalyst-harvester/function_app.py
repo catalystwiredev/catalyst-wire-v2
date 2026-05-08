@@ -5,10 +5,10 @@ import json
 import urllib.request
 import urllib.error
 from datetime import datetime, timedelta, timezone
-from huggingface_hub import InferenceClient
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
+from alpaca.data.enums import DataFeed
 
 app = func.FunctionApp()
 
@@ -41,6 +41,7 @@ def get_alpaca_bars(symbol: str = SYMBOL, limit: int = BAR_LIMIT) -> list[float]
             start=start,
             end=end,
             limit=limit,
+            feed=DataFeed.IEX,   # Free plan only — SIP requires paid subscription
         )
         bars   = client.get_stock_bars(request)
         closes = [float(bar.close) for bar in bars[symbol]]
@@ -54,30 +55,57 @@ def get_alpaca_bars(symbol: str = SYMBOL, limit: int = BAR_LIMIT) -> list[float]
 
 
 # ── AI Inference ──────────────────────────────────────────────────────────────
-def get_chronos_forecast(price_series: list[float]) -> list | None:
+def get_naive_forecast(price_series: list[float], steps: int = 5) -> list[list[float]] | None:
     """
-    POST price_series to amazon/chronos-bolt-small via HuggingFace Inference API.
-    Returns the raw forecast payload (nested quantile arrays) or None on failure.
+    In-process momentum forecast that produces output in the same nested-quantile
+    shape Chronos returns: [q10_steps, q50_steps, q90_steps].
+
+    Method: linear regression slope of the last N closes, projected forward.
+    Volatility bands (q10/q90) derived from sample standard deviation of residuals.
+
+    Why this exists: HuggingFace deprecated the free Chronos Inference endpoint
+    in 2025. Until we self-host Chronos / Kronos on Azure Container Apps, this
+    naive forecaster keeps the signal pipeline producing live data so the
+    frontend, SQL persistence, and Web PubSub broadcast can all be exercised.
+
+    Self-hosted Chronos is tracked as a follow-up. When ready, only this function
+    swaps; parse_momentum_signal() and downstream stay unchanged.
+
+    Replace by pointing this function at a Container Apps endpoint:
+        url = os.environ.get("CHRONOS_INFERENCE_URL", "")
+        ...standard HTTPS POST...
     """
-    if not price_series:
+    n = len(price_series)
+    if n < 5:
         return None
 
-    hf_token = os.environ.get("HUGGINGFACE_API_KEY")
-    if not hf_token:
-        logging.warning("[harvester] HUGGINGFACE_API_KEY not set — skipping inference")
-        return None
+    # Linear regression on indices 0..n-1 → slope + intercept
+    xs = list(range(n))
+    mean_x = sum(xs) / n
+    mean_y = sum(price_series) / n
+    num = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, price_series))
+    den = sum((x - mean_x) ** 2 for x in xs) or 1.0
+    slope = num / den
+    intercept = mean_y - slope * mean_x
 
-    try:
-        client   = InferenceClient(token=hf_token)
-        response = client.post(
-            json={"inputs": price_series},
-            model="amazon/chronos-bolt-small",
-        )
-        return json.loads(response.decode())
+    # Residuals (in-sample stddev) for confidence band
+    residuals = [(price_series[i] - (intercept + slope * i)) for i in range(n)]
+    var = sum(r * r for r in residuals) / max(1, n - 1)
+    stddev = var ** 0.5
 
-    except Exception as e:
-        logging.error(f"[harvester] Chronos inference error: {e}")
-        return None
+    # Project `steps` minutes forward; widen band linearly with horizon
+    last_idx = n - 1
+    q50: list[float] = []
+    q10: list[float] = []
+    q90: list[float] = []
+    for k in range(1, steps + 1):
+        center = intercept + slope * (last_idx + k)
+        widen  = stddev * (1.0 + 0.4 * k)   # mild fan-out
+        q50.append(round(center, 4))
+        q10.append(round(center - 1.28 * widen, 4))
+        q90.append(round(center + 1.28 * widen, 4))
+
+    return [q10, q50, q90]
 
 
 # ── Signal Parser ─────────────────────────────────────────────────────────────
@@ -207,9 +235,9 @@ def catalyst_harvester_timer(myTimer: func.TimerRequest) -> None:
         logging.warning("[harvester] No price data — aborting tick")
         return
 
-    forecast = get_chronos_forecast(closes)
+    forecast = get_naive_forecast(closes, steps=5)
     if not forecast:
-        logging.warning("[harvester] No Chronos forecast — aborting tick")
+        logging.warning("[harvester] No forecast — aborting tick")
         return
 
     last_price = closes[-1]
@@ -228,4 +256,4 @@ def catalyst_harvester_timer(myTimer: func.TimerRequest) -> None:
     )
 
     # Persist + broadcast via Catalyst Wire API
-    post_signal_to_api(signal, last_price=last_price, model="chronos-bolt-small")
+    post_signal_to_api(signal, last_price=last_price, model="naive_momentum_v1")
