@@ -109,6 +109,14 @@ export async function getYahooBars(symbol: string, opts: {
   }
 }
 
+export interface YFGreeks {
+  delta: number;
+  gamma: number;
+  theta: number;   // $/day
+  vega:  number;   // per 1% IV move
+  rho:   number;   // per 1% rate move
+}
+
 export interface YFOptionContract {
   contractSymbol:    string;
   strike:            number;
@@ -120,14 +128,64 @@ export interface YFOptionContract {
   impliedVolatility: number;
   inTheMoney:        boolean;
   expiration:        string;
+  greeks:            YFGreeks;
 }
 
 export interface YFOptionChain {
-  symbol:      string;
-  expiration:  string;
+  symbol:          string;
+  expiration:      string;
+  expirations:     string[];   // all available expiry dates
   underlyingPrice: number;
-  calls:       YFOptionContract[];
-  puts:        YFOptionContract[];
+  calls:           YFOptionContract[];
+  puts:            YFOptionContract[];
+}
+
+// ── Black-Scholes Greeks ─────────────────────────────────────────────────────
+
+function normCDF(x: number): number {
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x) / Math.SQRT2;
+  const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return 0.5 * (1 + sign * y);
+}
+
+function normPDF(x: number): number {
+  return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+}
+
+const RISK_FREE_RATE = 0.0525;   // approximate Fed funds — update from FRED as needed
+
+function computeGreeks(S: number, K: number, expirationISO: string, iv: number, isCall: boolean): YFGreeks {
+  const T = Math.max((new Date(expirationISO).getTime() - Date.now()) / (365 * 24 * 3600_000), 1 / 365);
+  const sigma = Math.max(iv, 0.001);
+  const r = RISK_FREE_RATE;
+  const sqrtT = Math.sqrt(T);
+
+  const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * sqrtT);
+  const d2 = d1 - sigma * sqrtT;
+  const nd1 = normPDF(d1);
+  const Nd1 = normCDF(d1);
+  const Nd2 = normCDF(d2);
+  const eRT = Math.exp(-r * T);
+
+  const delta = isCall ? Nd1 : Nd1 - 1;
+  const gamma = nd1 / (S * sigma * sqrtT);
+  const theta = isCall
+    ? ((-S * nd1 * sigma / (2 * sqrtT)) - r * K * eRT * Nd2) / 365
+    : ((-S * nd1 * sigma / (2 * sqrtT)) + r * K * eRT * normCDF(-d2)) / 365;
+  const vega = S * nd1 * sqrtT / 100;
+  const rho  = isCall
+    ? K * T * eRT * Nd2 / 100
+    : -K * T * eRT * normCDF(-d2) / 100;
+
+  return {
+    delta: parseFloat(delta.toFixed(4)),
+    gamma: parseFloat(gamma.toFixed(4)),
+    theta: parseFloat(theta.toFixed(4)),
+    vega:  parseFloat(vega.toFixed(4)),
+    rho:   parseFloat(rho.toFixed(4)),
+  };
 }
 
 export async function getYahooOptionChain(symbol: string, expirationISO?: string): Promise<YFOptionChain | null> {
@@ -137,27 +195,40 @@ export async function getYahooOptionChain(symbol: string, expirationISO?: string
     const chain = await yf().options(symbol.toUpperCase(), opts);
     if (!chain || !chain.options?.[0]) return null;
 
+    const underlyingPrice = chain.quote?.regularMarketPrice ?? 0;
     const o = chain.options[0];
     const expISO = o.expirationDate instanceof Date ? o.expirationDate.toISOString() : new Date().toISOString();
-    const map = (c: { contractSymbol?: string; strike?: number; lastPrice?: number; bid?: number; ask?: number; volume?: number; openInterest?: number; impliedVolatility?: number; inTheMoney?: boolean }): YFOptionContract => ({
-      contractSymbol:    c.contractSymbol ?? "",
-      strike:            c.strike ?? 0,
-      lastPrice:         c.lastPrice ?? 0,
-      bid:               c.bid ?? 0,
-      ask:               c.ask ?? 0,
-      volume:            c.volume ?? 0,
-      openInterest:      c.openInterest ?? 0,
-      impliedVolatility: c.impliedVolatility ?? 0,
-      inTheMoney:        c.inTheMoney ?? false,
-      expiration:        expISO,
-    });
+
+    const expirations: string[] = (chain.expirationDates ?? []).map((d: Date | string) =>
+      d instanceof Date ? d.toISOString() : d
+    );
+
+    const mapContract = (isCall: boolean) =>
+      (c: { contractSymbol?: string; strike?: number; lastPrice?: number; bid?: number; ask?: number; volume?: number; openInterest?: number; impliedVolatility?: number; inTheMoney?: boolean }): YFOptionContract => {
+        const strike = c.strike ?? 0;
+        const iv     = c.impliedVolatility ?? 0;
+        return {
+          contractSymbol:    c.contractSymbol ?? "",
+          strike,
+          lastPrice:         c.lastPrice ?? 0,
+          bid:               c.bid ?? 0,
+          ask:               c.ask ?? 0,
+          volume:            c.volume ?? 0,
+          openInterest:      c.openInterest ?? 0,
+          impliedVolatility: iv,
+          inTheMoney:        c.inTheMoney ?? false,
+          expiration:        expISO,
+          greeks:            computeGreeks(underlyingPrice, strike, expISO, iv, isCall),
+        };
+      };
 
     return {
-      symbol:           symbol.toUpperCase(),
-      expiration:       expISO,
-      underlyingPrice:  chain.quote?.regularMarketPrice ?? 0,
-      calls:            (o.calls ?? []).map(map),
-      puts:             (o.puts  ?? []).map(map),
+      symbol:          symbol.toUpperCase(),
+      expiration:      expISO,
+      expirations,
+      underlyingPrice,
+      calls:           (o.calls ?? []).map(mapContract(true)),
+      puts:            (o.puts  ?? []).map(mapContract(false)),
     };
   } catch (err) {
     console.error("[yahoo-finance] options failed:", symbol, err);
