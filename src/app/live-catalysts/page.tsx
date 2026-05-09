@@ -1,12 +1,12 @@
 import { Zap, FileText } from "lucide-react";
 import { searchFilings } from "@/lib/data/sec-edgar";
-import { FilingsTable } from "./FilingsTable";
+import { LiveCatalystsLive } from "./LiveCatalystsLive";
 import { DataPageHeader } from "@/components/DataPageHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { auth } from "@/lib/auth";
 import dayjs from "dayjs";
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 export default async function LiveCatalystsPage() {
   const session = await auth();
@@ -18,15 +18,13 @@ export default async function LiveCatalystsPage() {
     searchFilings({ forms: ["8-K"], dateFrom: thirtyDaysAgo, limit: 20 }).catch(() => []),
   ]);
 
-  const all     = [...form4, ...form8k].sort((a, b) => new Date(b.filedAt).getTime() - new Date(a.filedAt).getTime()).slice(0, 30);
-  const visible = isPremium ? all : all.slice(0, 8);
-  const locked  = isPremium ? [] : all.slice(8);
+  const all = [...form4, ...form8k].sort((a, b) => new Date(b.filedAt).getTime() - new Date(a.filedAt).getTime()).slice(0, 30);
 
   return (
     <div style={{ padding:"32px 24px", maxWidth:1200, margin:"0 auto" }}>
       <ScrollReveal>
         <DataPageHeader
-          label="Live Feed · Updating every 5 min"
+          label="Live Feed · Updating every 60s"
           labelColor="#0090f0"
           icon={Zap}
           iconColor="#0090f0"
@@ -65,7 +63,7 @@ export default async function LiveCatalystsPage() {
       </ScrollReveal>
 
       <ScrollReveal delay={200}>
-        <FilingsTable visible={visible} locked={locked}/>
+        <LiveCatalystsLive initial={{ filings: all }} isPremium={isPremium} />
       </ScrollReveal>
     </div>
   );

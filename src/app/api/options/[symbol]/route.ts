@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getYahooOptionChain } from "@/lib/data/yahoo-finance";
 
 export const runtime = "nodejs";
-export const revalidate = 60;
+export const revalidate = 2;
 
 /**
  * Options chain — full strikes, IV, OI, volume, and Black-Scholes Greeks.

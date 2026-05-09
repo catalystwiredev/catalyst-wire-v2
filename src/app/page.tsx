@@ -9,6 +9,8 @@ import { tierAtLeast } from "@/lib/tier";
 import Link from "next/link";
 import { Heart, ArrowRight } from "lucide-react";
 
+export const revalidate = 3600;
+
 export default async function HomePage() {
   const session = await auth();
   const interactiveCharts = tierAtLeast(session, "alpha");

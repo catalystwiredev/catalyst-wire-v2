@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { tierAtLeast } from "@/lib/tier";
 
 export const runtime = "nodejs";
-export const revalidate = 3600;
+export const revalidate = 30;
 
 /**
  * CFTC Commitment of Traders — institutional positioning data.

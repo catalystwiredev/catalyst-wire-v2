@@ -4,7 +4,7 @@ import { getTwelveDataQuote } from "@/lib/data/twelve-data";
 import { getQuote as getFinnhubQuote } from "@/lib/data/finnhub";
 
 export const runtime = "nodejs";
-export const revalidate = 30;
+export const revalidate = 1;
 
 /**
  * Unified real-time quote endpoint with automatic provider fallback.

@@ -44,6 +44,15 @@ export default function WatchlistPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Auto-refresh watchlist every 30 seconds — keeps the symbol list in sync if
+  // edited from another tab. Pauses when tab is hidden to save bandwidth.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 5_000);
+    return () => clearInterval(interval);
+  }, [load]);
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!symbol.trim()) return;

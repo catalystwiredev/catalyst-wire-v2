@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { searchDrugApplications, getDrugRecalls } from "@/lib/data/openfda";
 
 export const runtime = "nodejs";
-export const revalidate = 3600;
+export const revalidate = 30;
 
 export async function GET() {
   try {

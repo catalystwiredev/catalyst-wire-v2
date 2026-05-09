@@ -1,10 +1,10 @@
 import { BarChart2 } from "lucide-react";
-import { EarningsTable } from "@/components/tables/EarningsTable";
+import { EarningsLive } from "./EarningsLive";
 import { DataPageHeader } from "@/components/DataPageHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { auth } from "@/lib/auth";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 async function getEarnings() {
   try {
@@ -47,17 +47,7 @@ export default async function EarningsPage() {
       </ScrollReveal>
 
       <ScrollReveal delay={150}>
-        {earnings.length === 0 ? (
-          <div style={{ textAlign:"center", padding:72, color:"var(--text-secondary)", background:"rgba(8,14,26,0.65)", backdropFilter:"blur(18px)", border:"1px solid rgba(245,158,11,0.12)", borderRadius:18 }}>
-            <div style={{ width:64, height:64, background:"rgba(245,158,11,0.08)", border:"1px solid rgba(245,158,11,0.2)", borderRadius:18, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
-              <BarChart2 size={28} style={{ color:"#f59e0b", opacity:0.7 }}/>
-            </div>
-            <div style={{ fontSize:15, fontWeight:600, marginBottom:6 }}>No upcoming earnings found</div>
-            <div style={{ fontSize:13, opacity:0.6 }}>Earnings data refreshes hourly. The next batch of reports will appear shortly.</div>
-          </div>
-        ) : (
-          <EarningsTable earnings={earnings} />
-        )}
+        <EarningsLive initialEarnings={earnings} />
       </ScrollReveal>
     </div>
   );

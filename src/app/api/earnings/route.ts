@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getEarningsCalendar } from "@/lib/data/finnhub";
 
 export const runtime = "nodejs";
-export const revalidate = 3600;
+export const revalidate = 30;
 
 function toYMD(d: Date): string {
   const y = d.getFullYear();

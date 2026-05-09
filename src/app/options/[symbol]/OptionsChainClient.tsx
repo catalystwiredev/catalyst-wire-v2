@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { LiveBadge } from "@/components/LiveBadge";
 
 interface Greeks { delta: number; gamma: number; theta: number; vega: number; rho: number; }
 interface OptionContract {
@@ -16,9 +18,16 @@ interface OptionChain {
 
 type ChainSide = "calls" | "puts";
 
-export function OptionsChainClient({ chain }: { chain: OptionChain }) {
+export function OptionsChainClient({ chain: initialChain }: { chain: OptionChain }) {
   const [side, setSide] = useState<ChainSide>("calls");
   const router = useRouter();
+
+  const expParam = initialChain.expiration ? `?expiration=${encodeURIComponent(initialChain.expiration)}` : "";
+  const { data: chain, isFetching, lastUpdated } = useAutoRefresh<OptionChain>(
+    initialChain,
+    `/api/options/${initialChain.symbol}${expParam}`,
+    { intervalMs: 3_000 }
+  );
 
   const contracts = side === "calls" ? chain.calls : chain.puts;
   const sideColor = side === "calls" ? "#00e676" : "#ff4d4d";
@@ -44,6 +53,7 @@ export function OptionsChainClient({ chain }: { chain: OptionChain }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {/* Controls */}
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <LiveBadge isFetching={isFetching} lastUpdated={lastUpdated} label={`Live · 3s · $${chain.underlyingPrice.toFixed(2)}`} color="#a78bfa" />
         <div style={{ display: "inline-flex", borderRadius: 8, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
           {(["calls", "puts"] as ChainSide[]).map(s => (
             <button

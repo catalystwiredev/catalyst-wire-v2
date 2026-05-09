@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { ArrowRight, Newspaper, BarChart2 } from "lucide-react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { LiveBadge } from "@/components/LiveBadge";
 
 function verdictColor(v: string) { return v === "Bullish" ? "var(--bull)" : v === "Bearish" ? "var(--bear)" : "var(--neutral)"; }
 function scoreColor(s: number)   { return s >= 80 ? "var(--bull)" : s >= 60 ? "var(--accent)" : "var(--neutral)"; }
@@ -24,14 +26,29 @@ function MacroCard({ title, value, units, date }: MacroItem) {
 }
 
 export function DashboardClient({
-  catalysts, macro, news, isPremium,
+  catalysts: initialCatalysts, macro: initialMacro, news: initialNews, isPremium,
 }: {
   catalysts: Catalyst[];
   macro:     MacroItem[];
   news:      NewsItem[];
   isPremium: boolean;
 }) {
+  const { data, isFetching, lastUpdated } = useAutoRefresh<{
+    catalysts: Catalyst[]; macro: MacroItem[]; news: NewsItem[];
+  }>(
+    { catalysts: initialCatalysts, macro: initialMacro, news: initialNews },
+    "/api/dashboard",
+    { intervalMs: 10_000 }
+  );
+  const catalysts = data.catalysts;
+  const macro     = data.macro;
+  const news      = data.news;
+
   return (
+    <>
+    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+      <LiveBadge isFetching={isFetching} lastUpdated={lastUpdated} label="Live · 10s" />
+    </div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20, alignItems: "start" }}>
       {/* Left: feed + news */}
       <div>
@@ -160,5 +177,6 @@ export function DashboardClient({
         </div>
       </div>
     </div>
+    </>
   );
 }

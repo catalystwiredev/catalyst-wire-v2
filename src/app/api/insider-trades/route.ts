@@ -3,7 +3,7 @@ import { getRecentForm4s, EdgarFiling } from "@/lib/data/sec-edgar";
 import { getQuote } from "@/lib/data/finnhub";
 
 export const runtime = "nodejs";
-export const revalidate = 1800;
+export const revalidate = 20;
 
 interface QuoteData {
   price: number;

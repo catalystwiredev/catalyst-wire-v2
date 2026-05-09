@@ -1,10 +1,10 @@
 import { FlaskConical } from "lucide-react";
-import { FDAApplicationsTable, FDARecallsTable } from "@/components/tables/FDATable";
+import { FDALive } from "./FDALive";
 import { DataPageHeader } from "@/components/DataPageHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { auth } from "@/lib/auth";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 async function getFDAData() {
   try {
@@ -44,26 +44,8 @@ export default async function FDADecisionsPage() {
       </ScrollReveal>
 
       <ScrollReveal delay={120}>
-        <div style={{ marginBottom: 32 }}>
-          {applications.length === 0 ? (
-            <div style={{ textAlign:"center", padding:60, color:"var(--text-secondary)", background:"rgba(8,14,26,0.65)", backdropFilter:"blur(18px)", border:"1px solid rgba(244,114,182,0.12)", borderRadius:18 }}>
-              <div style={{ width:64, height:64, background:"rgba(244,114,182,0.08)", border:"1px solid rgba(244,114,182,0.2)", borderRadius:18, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
-                <FlaskConical size={28} style={{ color:"#f472b6", opacity:0.7 }}/>
-              </div>
-              <div style={{ fontSize:15, fontWeight:600, marginBottom:6 }}>No applications at this time</div>
-              <div style={{ fontSize:13, opacity:0.6 }}>FDA application data refreshes hourly from OpenFDA.</div>
-            </div>
-          ) : (
-            <FDAApplicationsTable applications={applications} />
-          )}
-        </div>
+        <FDALive initial={{ applications, recalls }} />
       </ScrollReveal>
-
-      {recalls.length > 0 && (
-        <ScrollReveal delay={240}>
-          <FDARecallsTable recalls={recalls} />
-        </ScrollReveal>
-      )}
     </div>
   );
 }

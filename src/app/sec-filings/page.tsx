@@ -1,10 +1,10 @@
 import { FileText } from "lucide-react";
-import { SecFilingsTable } from "@/components/tables/SecFilingsTable";
+import { SecFilingsLive } from "./SecFilingsLive";
 import { DataPageHeader } from "@/components/DataPageHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { auth } from "@/lib/auth";
 
-export const revalidate = 900;
+export const revalidate = 60;
 
 async function getFilings() {
   try {
@@ -46,17 +46,7 @@ export default async function SECFilingsPage() {
       </ScrollReveal>
 
       <ScrollReveal delay={150}>
-        {filings.length === 0 ? (
-          <div style={{ textAlign:"center", padding:72, color:"var(--text-secondary)", background:"rgba(8,14,26,0.65)", backdropFilter:"blur(18px)", border:"1px solid rgba(167,139,250,0.12)", borderRadius:18 }}>
-            <div style={{ width:64, height:64, background:"rgba(167,139,250,0.08)", border:"1px solid rgba(167,139,250,0.2)", borderRadius:18, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
-              <FileText size={28} style={{ color:"#a78bfa", opacity:0.7 }}/>
-            </div>
-            <div style={{ fontSize:15, fontWeight:600, marginBottom:6 }}>No filings found</div>
-            <div style={{ fontSize:13, opacity:0.6 }}>EDGAR publishes new filings throughout the trading day. Check back shortly.</div>
-          </div>
-        ) : (
-          <SecFilingsTable filings={filings} />
-        )}
+        <SecFilingsLive initialFilings={filings} />
       </ScrollReveal>
     </div>
   );

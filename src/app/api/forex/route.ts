@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getLatestRates, getCrossRate, getFXHistory, getMajorPairs, getFXCurrencies } from "@/lib/data/frankfurter";
 
 export const runtime = "nodejs";
-export const revalidate = 3600;
+export const revalidate = 30;
 
 /**
  * Forex rates endpoint — ECB rates via Frankfurter (no API key).

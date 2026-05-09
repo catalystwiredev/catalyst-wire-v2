@@ -2,27 +2,14 @@ import { Bitcoin } from "lucide-react";
 import { DataPageHeader } from "@/components/DataPageHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { auth } from "@/lib/auth";
+import { getTopBinancePairs, type BinanceTicker } from "@/lib/data/binance";
 import { CryptoLiveBoard } from "./CryptoLiveBoard";
 
 export const revalidate = 60;
 
-interface BinanceTicker {
-  symbol: string; lastPrice: number; priceChangePercent: number; priceChange: number;
-  highPrice: number; lowPrice: number; volume: number; quoteVolume: number; count: number;
-}
-
-async function getTopPairs(): Promise<BinanceTicker[]> {
-  try {
-    const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const res = await fetch(`${base}/api/crypto?mode=top&limit=24`, { next: { revalidate: 60 } });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.pairs ?? [];
-  } catch { return []; }
-}
-
 export default async function CryptoPage() {
-  const [session, pairs] = await Promise.all([auth(), getTopPairs()]);
+  const session = await auth();
+  const pairs: BinanceTicker[] = await getTopBinancePairs(24).catch(() => []);
   const isPremium = (session?.user as { plan?: string } | undefined)?.plan !== "free";
 
   const totalVolume = pairs.reduce((sum, p) => sum + p.quoteVolume, 0);

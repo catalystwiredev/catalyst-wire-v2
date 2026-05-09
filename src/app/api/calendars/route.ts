@@ -4,7 +4,7 @@ import { searchDrugApplications } from "@/lib/data/openfda";
 import { searchFilings } from "@/lib/data/sec-edgar";
 
 export const runtime = "nodejs";
-export const revalidate = 3600;
+export const revalidate = 30;
 
 function toYMD(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

@@ -3,7 +3,7 @@ import { getYahooQuote } from "@/lib/data/yahoo-finance";
 import { withCache } from "@/lib/cache";
 
 export const runtime = "nodejs";
-export const revalidate = 3600;
+export const revalidate = 10;
 
 interface ThemeDefinition {
   name:        string;

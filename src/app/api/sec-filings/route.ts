@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRecent8Ks, getRecentForm4s, searchFilings } from "@/lib/data/sec-edgar";
 
 export const runtime = "nodejs";
-export const revalidate = 900;
+export const revalidate = 10;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

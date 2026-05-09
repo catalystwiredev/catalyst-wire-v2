@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ScanLine, TrendingUp, Zap, ArrowRight, RefreshCw } from "lucide-react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { LiveBadge } from "@/components/LiveBadge";
 
 interface ScanResult {
   Ticker?: string; ticker?: string;
@@ -23,22 +24,15 @@ function VerdictPill({ v }: { v: string }) {
 }
 
 export default function ScannersPage() {
-  const [results, setResults] = useState<ScanResult[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [generated, setGenerated] = useState("");
-
-  async function load() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/scanners");
-      const data = await res.json();
-      setResults(data.results ?? []);
-      setGenerated(data.generated ?? "");
-    } catch { /* ignore */ }
-    setLoading(false);
-  }
-
-  useEffect(() => { load(); }, []);
+  const { data, isFetching, lastUpdated, refresh } = useAutoRefresh<{ results: ScanResult[]; generated: string }>(
+    { results: [], generated: "" },
+    "/api/scanners",
+    { intervalMs: 5_000 }
+  );
+  const results   = data.results ?? [];
+  const generated = data.generated ?? "";
+  const loading   = isFetching && results.length === 0;
+  const load      = refresh;
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 72px" }}>
@@ -46,6 +40,9 @@ export default function ScannersPage() {
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 8 }}>Market Intelligence</div>
         <h1 style={{ fontSize: "clamp(22px,3vw,36px)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8 }}>Momentum Scanner</h1>
         <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>Live catalysts ranked by AI impact score, enriched with real-time price data.</p>
+        <div style={{ marginTop: 12 }}>
+          <LiveBadge isFetching={isFetching} lastUpdated={lastUpdated} label="Live · 5s" color="#00e676" />
+        </div>
       </div>
 
       {/* Momentum Scanner */}

@@ -6,6 +6,7 @@ import { DataPageHeader } from "@/components/DataPageHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { auth } from "@/lib/auth";
 import { ChartClient } from "./ChartClient";
+import { LiveQuoteTicker } from "./LiveQuoteTicker";
 
 export const revalidate = 60;
 
@@ -59,6 +60,7 @@ export default async function ChartPage({ params }: { params: Promise<{ symbol: 
       </ScrollReveal>
 
       <ScrollReveal delay={150}>
+        <LiveQuoteTicker symbol={symbol} />
         <ChartClient symbol={symbol} initialBars={bars} initialSignal={latestSignal ?? null} isPremium={isPremium} />
       </ScrollReveal>
     </div>

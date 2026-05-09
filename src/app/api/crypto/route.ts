@@ -3,7 +3,7 @@ import { getBinanceTicker, getBinanceKlines, getTopBinancePairs } from "@/lib/da
 import { getCCXTTicker, getCCXTCandles, getCCXTArbitrageSnapshot, type SupportedExchange } from "@/lib/data/ccxt";
 
 export const runtime = "nodejs";
-export const revalidate = 15;
+export const revalidate = 5;
 
 /**
  * Crypto data endpoint — Binance REST + CCXT multi-exchange.

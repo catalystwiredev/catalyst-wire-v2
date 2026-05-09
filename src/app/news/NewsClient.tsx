@@ -4,6 +4,8 @@ import { Newspaper, TrendingUp, FlaskConical, Bitcoin, Landmark, BarChart2, Lock
 import Link from "next/link";
 import { NewsCard } from "./NewsCard";
 import dayjs from "dayjs";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { LiveBadge } from "@/components/LiveBadge";
 
 const CATEGORIES = [
   { id: "all",      label: "All News",      icon: Newspaper, keywords: [] },
@@ -30,12 +32,23 @@ function matchesCategory(article: Article, categoryId: string): boolean {
 export function NewsClient({ articles, lockedCount }: { articles: Article[]; lockedCount: number }) {
   const [activeCategory, setActiveCategory] = useState("all");
 
-  const filtered = articles.filter(a => matchesCategory(a, activeCategory));
+  const { data, isFetching, lastUpdated } = useAutoRefresh<{ articles: Article[]; count: number }>(
+    { articles, count: articles.length },
+    "/api/news?limit=30",
+    { intervalMs: 10_000 }
+  );
+  void lockedCount;
+
+  const filtered = data.articles.filter(a => matchesCategory(a, activeCategory));
   const visible = filtered.slice(0, 6);
   const lockedFiltered = filtered.slice(6);
 
   return (
     <>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+        <LiveBadge isFetching={isFetching} lastUpdated={lastUpdated} label="Live News · 10s" color="#0090f0" />
+      </div>
+
       {/* Category filter row */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 28 }}>
         {CATEGORIES.map(({ id, label, icon: Icon }) => {

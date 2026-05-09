@@ -1,13 +1,11 @@
-import { Calendar, FlaskConical, BarChart2, Rocket, ArrowRight } from "lucide-react";
-import { EarningsTable } from "@/components/tables/EarningsTable";
-import { FDAApplicationsTable } from "@/components/tables/FDATable";
-import { SecFilingsTable } from "@/components/tables/SecFilingsTable";
+import { Calendar, ArrowRight } from "lucide-react";
+import { CalendarsLive } from "./CalendarsLive";
 import { DataPageHeader } from "@/components/DataPageHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 async function getCalendarData() {
   try {
@@ -18,32 +16,6 @@ async function getCalendarData() {
   } catch { return { earnings: [], fdaApps: [], ipoFilings: [] }; }
 }
 
-function SectionHeader({ icon: Icon, title, count, color = "var(--accent)" }: { icon: React.ElementType; title: string; count?: number; color?: string }) {
-  return (
-    <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:18 }}>
-      <div style={{ width:38, height:38, background:`${color}12`, border:`1px solid ${color}28`, borderRadius:11, display:"flex", alignItems:"center", justifyContent:"center", boxShadow:`0 0 16px ${color}25` }}>
-        <Icon size={18} style={{ color, filter:`drop-shadow(0 0 4px ${color})` }}/>
-      </div>
-      <h2 style={{ fontSize:18, fontWeight:800, letterSpacing:"-0.015em", margin:0 }}>{title}</h2>
-      {count != null && (
-        <span style={{ fontSize:11, color:"var(--text-muted)", fontFamily:"monospace", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:6, padding:"2px 9px", fontWeight:600 }}>
-          {count} items
-        </span>
-      )}
-    </div>
-  );
-}
-
-function EmptyState({ label, icon: Icon, color }: { label: string; icon: React.ElementType; color: string }) {
-  return (
-    <div style={{ padding:"40px 24px", textAlign:"center", color:"var(--text-muted)", background:"rgba(8,14,26,0.65)", backdropFilter:"blur(12px)", border:`1px solid ${color}12`, borderRadius:16, fontSize:13 }}>
-      <div style={{ width:48, height:48, background:`${color}08`, border:`1px solid ${color}18`, borderRadius:13, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px" }}>
-        <Icon size={22} style={{ color, opacity:0.6 }}/>
-      </div>
-      {label}
-    </div>
-  );
-}
 
 export default async function CalendarsPage() {
   const [session, { earnings, fdaApps, ipoFilings }] = await Promise.all([auth(), getCalendarData()]);
@@ -71,37 +43,9 @@ export default async function CalendarsPage() {
         />
       </ScrollReveal>
 
-      <div style={{ display:"flex", flexDirection:"column", gap:36 }}>
-        <ScrollReveal delay={100}>
-          <section>
-            <SectionHeader icon={BarChart2} title="Earnings Calendar" count={earnings?.length} color="#00e676"/>
-            {!earnings?.length
-              ? <EmptyState label="No upcoming earnings data available right now." icon={BarChart2} color="#00e676"/>
-              : <EarningsTable earnings={earnings.slice(0, 30)}/>
-            }
-          </section>
-        </ScrollReveal>
-
-        <ScrollReveal delay={180}>
-          <section>
-            <SectionHeader icon={FlaskConical} title="FDA Drug Applications (NDA/BLA)" count={fdaApps?.length} color="#f472b6"/>
-            {!fdaApps?.length
-              ? <EmptyState label="No FDA application data available right now." icon={FlaskConical} color="#f472b6"/>
-              : <FDAApplicationsTable applications={fdaApps}/>
-            }
-          </section>
-        </ScrollReveal>
-
-        <ScrollReveal delay={260}>
-          <section>
-            <SectionHeader icon={Rocket} title="IPO Filings (S-1 Registrations)" count={ipoFilings?.length} color="#60a5fa"/>
-            {!ipoFilings?.length
-              ? <EmptyState label="No recent S-1 filings found." icon={Rocket} color="#60a5fa"/>
-              : <SecFilingsTable filings={ipoFilings}/>
-            }
-          </section>
-        </ScrollReveal>
-      </div>
+      <ScrollReveal delay={100}>
+        <CalendarsLive initial={{ earnings: earnings ?? [], fdaApps: fdaApps ?? [], ipoFilings: ipoFilings ?? [] }} />
+      </ScrollReveal>
 
       {!isPremium && (
         <ScrollReveal delay={320}>

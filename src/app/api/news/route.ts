@@ -3,7 +3,7 @@ import { getNews } from "@/lib/data/marketaux";
 import { getMarketNews } from "@/lib/data/finnhub";
 
 export const runtime = "nodejs";
-export const revalidate = 120;
+export const revalidate = 10;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

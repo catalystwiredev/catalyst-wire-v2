@@ -1,10 +1,10 @@
 import { UserCheck } from "lucide-react";
-import { InsiderTradesTable } from "@/components/tables/InsiderTradesTable";
+import { InsiderTradesLive } from "./InsiderTradesLive";
 import { DataPageHeader } from "@/components/DataPageHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { auth } from "@/lib/auth";
 
-export const revalidate = 1800;
+export const revalidate = 120;
 
 async function getTrades() {
   try {
@@ -46,17 +46,7 @@ export default async function InsiderTradesPage() {
       </ScrollReveal>
 
       <ScrollReveal delay={150}>
-        {trades.length === 0 ? (
-          <div style={{ textAlign:"center", padding:72, color:"var(--text-secondary)", background:"rgba(8,14,26,0.65)", backdropFilter:"blur(18px)", border:"1px solid rgba(0,230,118,0.12)", borderRadius:18 }}>
-            <div style={{ width:64, height:64, background:"rgba(0,230,118,0.08)", border:"1px solid rgba(0,230,118,0.2)", borderRadius:18, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
-              <UserCheck size={28} style={{ color:"#00e676", opacity:0.7 }}/>
-            </div>
-            <div style={{ fontSize:15, fontWeight:600, marginBottom:6 }}>No insider trades found</div>
-            <div style={{ fontSize:13, opacity:0.6 }}>Form 4 filings are submitted within 2 business days of a transaction. Check back shortly.</div>
-          </div>
-        ) : (
-          <InsiderTradesTable trades={trades} />
-        )}
+        <InsiderTradesLive initialTrades={trades} />
       </ScrollReveal>
     </div>
   );
