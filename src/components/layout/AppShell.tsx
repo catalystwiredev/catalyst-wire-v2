@@ -39,6 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [scrolled,    setScrolled]    = useState(false);
+  const [isMobile,    setIsMobile]    = useState(false);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -48,11 +49,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       }
     }
     function onScroll() { setScrolled(window.scrollY > 12); }
+    function checkMobile() { setIsMobile(window.innerWidth < 900); }
+    checkMobile();
     window.addEventListener("keydown", onKey);
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", checkMobile);
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", checkMobile);
     };
   }, []);
 
@@ -99,9 +104,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Sidebar overlay — only on narrow viewports (mobile drawer pattern).
           On desktop the sidebar pushes content via marginLeft, so dimming
           the main content would just hurt readability. */}
-      {sidebarOpen && (
+      {sidebarOpen && isMobile && (
         <div
-          className="cw-sidebar-overlay"
           onClick={() => setSidebarOpen(false)}
           style={{
             position: "fixed", inset: 0,
@@ -112,11 +116,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }}
         />
       )}
-      <style>{`
-        @media (min-width: 900px) {
-          .cw-sidebar-overlay { display: none; }
-        }
-      `}</style>
 
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
