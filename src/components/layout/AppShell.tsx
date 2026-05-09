@@ -96,9 +96,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {/* Sidebar overlay */}
+      {/* Sidebar overlay — only on narrow viewports (mobile drawer pattern).
+          On desktop the sidebar pushes content via marginLeft, so dimming
+          the main content would just hurt readability. */}
       {sidebarOpen && (
         <div
+          className="cw-sidebar-overlay"
           onClick={() => setSidebarOpen(false)}
           style={{
             position: "fixed", inset: 0,
@@ -109,6 +112,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }}
         />
       )}
+      <style>{`
+        @media (min-width: 900px) {
+          .cw-sidebar-overlay { display: none; }
+        }
+      `}</style>
 
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
