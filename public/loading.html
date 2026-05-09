@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#050507" />
+<title>Catalyst Wire — Igniting Connections</title>
+<style>
+  :root {
+    --bg-0: #050507;
+    --bg-1: #0a0a0e;
+    --cyan: #00f5ff;
+    --magenta: #ff00aa;
+    --violet: #7c3aed;
+    --silver: #e8edf5;
+    --muted: #6a84a0;
+    --glow-cyan: 0 0 24px rgba(0, 245, 255, 0.55);
+    --glow-magenta: 0 0 24px rgba(255, 0, 170, 0.55);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg-0);
+    color: var(--silver);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(0, 245, 255, 0.08) 0%, transparent 45%),
+      radial-gradient(ellipse at 80% 90%, rgba(255, 0, 170, 0.08) 0%, transparent 45%),
+      var(--bg-0);
+  }
+
+  /* ── Background canvas (particle network) ───────────────────────────── */
+  #particles {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; opacity: 0.85;
+  }
+
+  /* ── Scanline overlay ───────────────────────────────────────────────── */
+  .scanlines {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 2px,
+      rgba(255, 255, 255, 0.012) 2px, rgba(255, 255, 255, 0.012) 3px
+    );
+  }
+  .scanlines::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 245, 255, 0.04) 50%, transparent 100%);
+    animation: scanline 8s linear infinite;
+  }
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+
+  /* ── Main container ─────────────────────────────────────────────────── */
+  .stage {
+    position: relative; z-index: 2;
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 40px; padding: 24px;
+  }
+
+  /* ── Orb / catalyst ─────────────────────────────────────────────────── */
+  .orb-wrap {
+    position: relative;
+    width: clamp(120px, 18vw, 180px);
+    height: clamp(120px, 18vw, 180px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .orb {
+    position: absolute; inset: 30%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, var(--cyan), var(--violet) 50%, var(--magenta) 100%);
+    filter: blur(0.5px);
+    box-shadow:
+      0 0 40px rgba(0, 245, 255, 0.6),
+      0 0 80px rgba(255, 0, 170, 0.35),
+      inset 0 0 20px rgba(255, 255, 255, 0.4);
+    animation: orb-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes orb-pulse {
+    0%, 100% { transform: scale(1); filter: blur(0.5px) hue-rotate(0deg); }
+    50%      { transform: scale(1.12); filter: blur(0.5px) hue-rotate(20deg); }
+  }
+  .ring {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 1px solid rgba(0, 245, 255, 0.4);
+    animation: ring-spin 6s linear infinite;
+  }
+  .ring.r2 {
+    inset: 8%; border-color: rgba(255, 0, 170, 0.4);
+    animation-duration: 9s; animation-direction: reverse;
+  }
+  .ring.r3 {
+    inset: 16%; border-color: rgba(124, 58, 237, 0.35);
+    animation-duration: 12s;
+  }
+  @keyframes ring-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── Logotype ───────────────────────────────────────────────────────── */
+  .brand {
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+  }
+  .brand h1 {
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", system-ui;
+    font-size: clamp(36px, 6vw, 68px);
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    line-height: 1;
+    background: linear-gradient(120deg, var(--cyan) 0%, #fff 50%, var(--magenta) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 60px rgba(0, 245, 255, 0.3);
+    position: relative;
+    cursor: default;
+  }
+  .brand h1::before, .brand h1::after {
+    content: attr(data-text);
+    position: absolute; inset: 0;
+    background: inherit; -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .brand h1:hover::before {
+    opacity: 0.8; transform: translate(-2px, 0); color: var(--cyan);
+    -webkit-text-fill-color: var(--cyan);
+    animation: glitch-1 0.4s infinite;
+  }
+  .brand h1:hover::after {
+    opacity: 0.8; transform: translate(2px, 0); color: var(--magenta);
+    -webkit-text-fill-color: var(--magenta);
+    animation: glitch-2 0.4s infinite;
+  }
+  @keyframes glitch-1 {
+    0%, 100% { clip-path: inset(0 0 70% 0); }
+    50%      { clip-path: inset(40% 0 30% 0); }
+  }
+  @keyframes glitch-2 {
+    0%, 100% { clip-path: inset(60% 0 0 0); }
+    50%      { clip-path: inset(20% 0 50% 0); }
+  }
+  .brand .tagline {
+    font-size: clamp(11px, 1.2vw, 13px);
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0; transform: translateY(8px);
+    animation: fade-up 1.2s ease 0.4s forwards;
+  }
+  .brand .tagline .dot {
+    display: inline-block; margin: 0 10px;
+    color: var(--cyan); text-shadow: var(--glow-cyan);
+  }
+  @keyframes fade-up {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Progress bar ───────────────────────────────────────────────────── */
+  .progress-wrap {
+    width: min(420px, 80vw);
+    display: flex; flex-direction: column; gap: 10px; align-items: center;
+  }
+  .bar {
+    width: 100%; height: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px; overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+  .bar > .fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--cyan), var(--magenta));
+    box-shadow: 0 0 12px rgba(0, 245, 255, 0.7), 0 0 18px rgba(255, 0, 170, 0.4);
+    transition: width 0.18s ease-out;
+  }
+  .meta {
+    width: 100%; display: flex; justify-content: space-between;
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .pct { color: var(--cyan); text-shadow: var(--glow-cyan); font-variant-numeric: tabular-nums; }
+  .status { color: var(--silver); opacity: 0.7; }
+
+  /* ── Enter button ───────────────────────────────────────────────────── */
+  .enter {
+    appearance: none; -webkit-appearance: none;
+    border: 1px solid rgba(0, 245, 255, 0.5);
+    background: rgba(0, 245, 255, 0.06);
+    color: var(--silver);
+    padding: 14px 32px;
+    font-family: inherit; font-size: 12px;
+    letter-spacing: 0.32em; text-transform: uppercase;
+    border-radius: 8px;
+    cursor: pointer;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--glow-cyan), inset 0 0 20px rgba(0, 245, 255, 0.08);
+    opacity: 0; transform: translateY(12px) scale(0.96); pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .enter.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+  .enter:hover {
+    background: rgba(0, 245, 255, 0.14);
+    box-shadow: 0 0 36px rgba(0, 245, 255, 0.55), 0 0 60px rgba(255, 0, 170, 0.25);
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  /* ── Stage fade-out ─────────────────────────────────────────────────── */
+  body.exit .stage { opacity: 0; transition: opacity 0.7s ease; }
+  body.exit #particles { opacity: 0; transition: opacity 0.7s ease; }
+
+  /* ── Reduced motion ─────────────────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .ring, .orb, .scanlines::after, .brand .tagline { animation: none !important; }
+    .brand .tagline { opacity: 1; transform: none; }
+  }
+
+  /* ── Responsive tweaks ──────────────────────────────────────────────── */
+  @media (max-width: 480px) {
+    .stage { gap: 28px; }
+    .brand h1 { letter-spacing: 0.10em; }
+  }
+</style>
+</head>
+<body>
+  <canvas id="particles" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <main class="stage" role="status" aria-live="polite" aria-label="Catalyst Wire is loading">
+    <div class="orb-wrap" aria-hidden="true">
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+      <div class="orb"></div>
+    </div>
+
+    <div class="brand">
+      <h1 data-text="CATALYST WIRE">CATALYST WIRE</h1>
+      <p class="tagline">Igniting Connections <span class="dot">•</span> Sparking Innovation</p>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar">
+        <div class="fill" id="fill"></div>
+      </div>
+      <div class="meta">
+        <span class="status" id="status">Wiring the future…</span>
+        <span class="pct" id="pct">0%</span>
+      </div>
+    </div>
+
+    <button class="enter" id="enter" aria-label="Enter Catalyst Wire">Enter Catalyst Wire →</button>
+  </main>
+
+  <script>
+  (() => {
+    "use strict";
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    /* ── Particle network ─────────────────────────────────────────────── */
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    let W = 0, H = 0;
+    let nodes = [];
+    const NODE_COUNT = Math.min(72, Math.floor(window.innerWidth / 22));
+    const LINK_DIST = 140;
+    const mouse = { x: -1000, y: -1000 };
+
+    function resize() {
+      W = canvas.width  = window.innerWidth  * dpr;
+      H = canvas.height = window.innerHeight * dpr;
+      canvas.style.width  = window.innerWidth  + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function spawn() {
+      nodes = Array.from({ length: NODE_COUNT }, () => ({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.30,
+        vy: (Math.random() - 0.5) * 0.30,
+        hue: Math.random() < 0.5 ? "cyan" : "magenta",
+      }));
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      // Mouse parallax offset
+      const offX = (mouse.x - window.innerWidth / 2) * 0.012;
+      const offY = (mouse.y - window.innerHeight / 2) * 0.012;
+
+      // Update + draw nodes
+      for (const n of nodes) {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > window.innerWidth)  n.vx *= -1;
+        if (n.y < 0 || n.y > window.innerHeight) n.vy *= -1;
+
+        const dx = n.x + offX, dy = n.y + offY;
+        const color = n.hue === "cyan" ? "0, 245, 255" : "255, 0, 170";
+
+        ctx.beginPath();
+        ctx.arc(dx, dy, 1.4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${color}, 0.85)`;
+        ctx.shadowColor = `rgba(${color}, 0.7)`;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+
+      // Connecting lines
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const a = nodes[i], b = nodes[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const d = Math.hypot(dx, dy);
+          if (d < LINK_DIST) {
+            const alpha = (1 - d / LINK_DIST) * 0.35;
+            const grad = ctx.createLinearGradient(a.x + offX, a.y + offY, b.x + offX, b.y + offY);
+            grad.addColorStop(0, `rgba(0, 245, 255, ${alpha})`);
+            grad.addColorStop(1, `rgba(255, 0, 170, ${alpha})`);
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(a.x + offX, a.y + offY);
+            ctx.lineTo(b.x + offX, b.y + offY);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Mouse-attached node
+      ctx.beginPath();
+      ctx.arc(mouse.x, mouse.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      ctx.shadowColor = "rgba(0, 245, 255, 0.9)";
+      ctx.shadowBlur = 14;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      if (!reduceMotion) requestAnimationFrame(draw);
+    }
+
+    window.addEventListener("resize", () => { resize(); spawn(); });
+    window.addEventListener("mousemove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    window.addEventListener("mouseleave", () => { mouse.x = mouse.y = -1000; });
+
+    resize();
+    spawn();
+    if (!reduceMotion) requestAnimationFrame(draw);
+    else draw();
+
+    /* ── Loading sequence ─────────────────────────────────────────────── */
+    const STATUS_TEXTS = [
+      "Wiring the future…",
+      "Synapsing nodes…",
+      "Catalyzing intelligence…",
+      "Calibrating signals…",
+      "Igniting the grid…",
+    ];
+
+    const fillEl   = document.getElementById("fill");
+    const pctEl    = document.getElementById("pct");
+    const statusEl = document.getElementById("status");
+    const enterEl  = document.getElementById("enter");
+    const barEl    = document.getElementById("bar");
+
+    let pct = 0;
+    let statusIdx = 0;
+    const start = performance.now();
+    const DURATION = 4200;   // ~4.2 seconds total
+
+    function tick(t) {
+      const elapsed = t - start;
+      // Eased progress: starts fast, slows, ramps toward 100
+      const linear = Math.min(elapsed / DURATION, 1);
+      const eased  = 1 - Math.pow(1 - linear, 1.6);
+      pct = Math.floor(eased * 100);
+
+      fillEl.style.width = pct + "%";
+      pctEl.textContent  = pct + "%";
+      barEl.setAttribute("aria-valuenow", String(pct));
+
+      // Rotate status every ~900ms
+      const newStatusIdx = Math.min(Math.floor(elapsed / 900), STATUS_TEXTS.length - 1);
+      if (newStatusIdx !== statusIdx) {
+        statusIdx = newStatusIdx;
+        statusEl.style.opacity = "0";
+        setTimeout(() => {
+          statusEl.textContent = STATUS_TEXTS[statusIdx];
+          statusEl.style.opacity = "0.7";
+        }, 180);
+        statusEl.style.transition = "opacity 0.18s";
+      }
+
+      if (pct < 100) {
+        requestAnimationFrame(tick);
+      } else {
+        statusEl.textContent = "Ready.";
+        enterEl.classList.add("show");
+        enterEl.focus();
+      }
+    }
+    requestAnimationFrame(tick);
+
+    /* ── Exit transition ──────────────────────────────────────────────── */
+    function exit() {
+      document.body.classList.add("exit");
+      // Inform parent if embedded — adjust target route as needed.
+      setTimeout(() => {
+        const target = new URLSearchParams(location.search).get("redirect") || "/";
+        window.location.href = target;
+      }, 720);
+    }
+    enterEl.addEventListener("click", exit);
+    document.addEventListener("keydown", e => {
+      if ((e.key === "Enter" || e.key === " ") && enterEl.classList.contains("show")) exit();
+    });
+  })();
+  </script>
+</body>
+</html>

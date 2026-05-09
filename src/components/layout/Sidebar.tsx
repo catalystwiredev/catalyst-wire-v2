@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Zap, FileText, BarChart2, UserCheck, Landmark, FlaskConical, Newspaper, ScanLine, Calendar, TrendingUp, LogIn, Heart, Search, Menu, X, ChevronRight, Star, GraduationCap, Calculator, BookOpen, Bookmark } from "lucide-react";
+import { Home, Zap, FileText, BarChart2, UserCheck, Landmark, FlaskConical, Newspaper, ScanLine, Calendar, TrendingUp, LogIn, Heart, Search, Menu, X, ChevronRight, Star, GraduationCap, Calculator, BookOpen, Bookmark, Bitcoin, Globe, Activity, Sigma, ScrollText } from "lucide-react";
 
 const NAV = [
   { label:"Platform", items:[
@@ -21,6 +21,13 @@ const NAV = [
     { href:"/scanners",  label:"Scanners",      icon:ScanLine },
     { href:"/calendars", label:"Calendars",     icon:Calendar },
     { href:"/themes",    label:"Themes",        icon:TrendingUp },
+  ]},
+  { label:"Markets", items:[
+    { href:"/crypto",  label:"Crypto",  icon:Bitcoin,    live:true },
+    { href:"/forex",   label:"Forex",   icon:Globe },
+    { href:"/options", label:"Options", icon:Sigma },
+    { href:"/macro",   label:"Macro",   icon:Activity },
+    { href:"/cot",     label:"COT",     icon:ScrollText },
   ]},
   { label:"Tools", items:[
     { href:"/calculators", label:"Calculators", icon:Calculator },

@@ -1,0 +1,69 @@
+import { Bitcoin } from "lucide-react";
+import { DataPageHeader } from "@/components/DataPageHeader";
+import { ScrollReveal } from "@/components/ScrollReveal";
+import { auth } from "@/lib/auth";
+import { CryptoLiveBoard } from "./CryptoLiveBoard";
+
+export const revalidate = 60;
+
+interface BinanceTicker {
+  symbol: string; lastPrice: number; priceChangePercent: number; priceChange: number;
+  highPrice: number; lowPrice: number; volume: number; quoteVolume: number; count: number;
+}
+
+async function getTopPairs(): Promise<BinanceTicker[]> {
+  try {
+    const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const res = await fetch(`${base}/api/crypto?mode=top&limit=24`, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.pairs ?? [];
+  } catch { return []; }
+}
+
+export default async function CryptoPage() {
+  const [session, pairs] = await Promise.all([auth(), getTopPairs()]);
+  const isPremium = (session?.user as { plan?: string } | undefined)?.plan !== "free";
+
+  const totalVolume = pairs.reduce((sum, p) => sum + p.quoteVolume, 0);
+  const gainers     = pairs.filter(p => p.priceChangePercent > 0).length;
+  const losers      = pairs.filter(p => p.priceChangePercent < 0).length;
+
+  return (
+    <div style={{ padding: "32px 24px", maxWidth: 1200, margin: "0 auto" }}>
+      <ScrollReveal>
+        <DataPageHeader
+          label="Crypto Markets · 24/7 Live"
+          labelColor="#f59e0b"
+          icon={Bitcoin}
+          iconColor="#f59e0b"
+          iconGlow="rgba(245,158,11,0.35)"
+          title="Crypto Intelligence"
+          description="Real-time crypto pairs from Binance — top USDT markets by 24h volume. Streaming WebSocket updates, never closes. Includes overnight, weekend, and holiday coverage."
+          stats={[
+            { label: "Top Pairs",   value: pairs.length, color: "#f59e0b" },
+            { label: "Gainers 24h", value: gainers,      color: "#00e676" },
+            { label: "Losers 24h",  value: losers,       color: "#ff4d4d" },
+            { label: "Vol 24h ($)", value: totalVolume > 1e9 ? `$${(totalVolume / 1e9).toFixed(1)}B` : `$${(totalVolume / 1e6).toFixed(1)}M`, color: "#a78bfa" },
+          ]}
+          isPremium={isPremium}
+          upgradeHref="/register?plan=alpha"
+          upgradeLabel="Unlock arbitrage scanner"
+        />
+      </ScrollReveal>
+
+      <ScrollReveal delay={150}>
+        {pairs.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 72, color: "var(--text-secondary)", background: "rgba(8,14,26,0.65)", backdropFilter: "blur(18px)", border: "1px solid rgba(245,158,11,0.12)", borderRadius: 18 }}>
+            <Bitcoin size={28} style={{ color: "#f59e0b", opacity: 0.7, marginBottom: 12 }} />
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Crypto data unavailable</div>
+            <div style={{ fontSize: 13, opacity: 0.6 }}>Binance public stream is temporarily unreachable.</div>
+          </div>
+        ) : (
+          <CryptoLiveBoard initialPairs={pairs} />
+        )}
+      </ScrollReveal>
+    </div>
+  );
+}
+
