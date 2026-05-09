@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getQuote } from "@/lib/data/alpha-vantage";
+import { getYahooQuote } from "@/lib/data/yahoo-finance";
 import { withCache } from "@/lib/cache";
 
 export const runtime = "nodejs";
@@ -23,10 +23,6 @@ const THEMES: ThemeDefinition[] = [
   { name: "Space & Aviation",      slug: "space",    tickers: ["RKLB","ASTS","ACHR","JOBY","SPCE","LUNR"],    description: "Commercial space launch, satellite, and advanced air mobility." },
 ];
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export async function GET() {
   try {
     // Redis cache for 1 hour — Alpha Vantage free tier = 25 req/day
@@ -49,16 +45,21 @@ async function fetchThemes() {
       }
     }
 
-    // Fetch sequentially with 200ms delay to respect Alpha Vantage rate limits
+    // Yahoo Finance: no key, no rate limit, returns pre/post-market prices when active
     const quoteMap = new Map<string, number | null>();
-    for (let i = 0; i < allTickers.length; i++) {
-      if (i > 0) await sleep(200);
-      const ticker = allTickers[i];
-      try {
-        const q = await getQuote(ticker);
-        quoteMap.set(ticker, q ? q.changePct : null);
-      } catch {
-        quoteMap.set(ticker, null);
+    const results = await Promise.allSettled(
+      allTickers.map(ticker => getYahooQuote(ticker).then(q => ({ ticker, q })))
+    );
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        const { ticker, q } = r.value;
+        // During extended hours, prefer the active session's change over regular-market change
+        const pct = q
+          ? (q.preMarketChangePercent ?? q.postMarketChangePercent ?? q.regularMarketChangePercent)
+          : null;
+        quoteMap.set(ticker, pct);
+      } else {
+        // ticker not available in fulfilled result; handled via default null below
       }
     }
 

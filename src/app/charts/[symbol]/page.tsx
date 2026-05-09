@@ -1,5 +1,6 @@
 import { LineChart } from "lucide-react";
 import { getStockBars } from "@/lib/data/alpaca";
+import { getYahooBars } from "@/lib/data/yahoo-finance";
 import { getSignalsForSymbol } from "@/lib/azure-db";
 import { DataPageHeader } from "@/components/DataPageHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
@@ -12,13 +13,25 @@ export default async function ChartPage({ params }: { params: Promise<{ symbol: 
   const { symbol: rawSymbol } = await params;
   const symbol = rawSymbol.toUpperCase();
 
-  const [session, bars, signals] = await Promise.all([
+  const [session, signals] = await Promise.all([
     auth(),
-    getStockBars(symbol, { timeframe: "1Min", limit: 200 }).catch(() => []),
     getSignalsForSymbol(symbol, 50).catch(() => []),
   ]);
 
-  const isPremium = (session?.user as any)?.plan !== "free";
+  // Primary: Alpaca IEX (regular market hours)
+  // Fallback: Yahoo Finance (pre-market 4AM, after-hours 8PM, weekends)
+  let bars = await getStockBars(symbol, { timeframe: "1Min", limit: 200 }).catch(() => []);
+  let provider = "Alpaca IEX";
+
+  if (bars.length < 5) {
+    const end   = new Date();
+    const start = new Date(end.getTime() - 230 * 60_000);
+    const yahooBars = await getYahooBars(symbol, { interval: "1m", period1: start, period2: end }).catch(() => []);
+    bars     = yahooBars.slice(-200);
+    provider = "Yahoo Finance";
+  }
+
+  const isPremium    = (session?.user as any)?.plan !== "free";
   const latestSignal = signals[0];
   const lastBar      = bars[bars.length - 1];
 
@@ -32,7 +45,7 @@ export default async function ChartPage({ params }: { params: Promise<{ symbol: 
           iconColor="#0090f0"
           iconGlow="rgba(0,144,240,0.35)"
           title={symbol}
-          description={`Live ${symbol} chart with AI prediction overlay. ${bars.length} bars from Alpaca IEX feed${latestSignal ? ` · latest signal: ${latestSignal.direction} @ ${latestSignal.confidence}%` : ""}.`}
+          description={`${symbol} chart with AI prediction overlay. ${bars.length} bars via ${provider}${latestSignal ? ` · latest signal: ${latestSignal.direction} @ ${latestSignal.confidence}%` : ""}. Pre-market, after-hours, and weekend data included.`}
           stats={[
             { label: "Last Price",  value: lastBar    ? `$${lastBar.c.toFixed(2)}`         : "—", color: "#0090f0" },
             { label: "Bars",        value: bars.length,                                          color: "#a78bfa" },
