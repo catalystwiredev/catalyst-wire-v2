@@ -4,23 +4,25 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 import { auth } from "@/lib/auth";
 import { getMajorPairs } from "@/lib/data/frankfurter";
 import { ForexLive } from "./ForexLive";
+import { tierAtLeast, shouldShowUpgradeCTA } from "@/lib/tier";
 
-export const revalidate = 600;
+export const dynamic = "force-dynamic";
 
-interface FXResponse { base: string; date: string; rates: Record<string, number>; }
-
-async function getForex(): Promise<FXResponse | null> {
+async function getForex() {
   try {
     return await getMajorPairs();
-  } catch { return null; }
+  } catch { 
+    return null; 
+  }
 }
 
 export default async function ForexPage() {
   const [session, fx] = await Promise.all([auth(), getForex()]);
-  const isPremium = (session?.user as { plan?: string } | undefined)?.plan !== "free";
+
+  const isPremium = tierAtLeast(session, "alpha");
 
   const pairCount = fx ? Object.keys(fx.rates).length : 0;
-  const date      = fx?.date ?? "—";
+  const date = fx?.date ?? "—";
 
   return (
     <div style={{ padding: "32px 24px", maxWidth: 1200, margin: "0 auto" }}>
@@ -34,13 +36,14 @@ export default async function ForexPage() {
           title="Currency Markets"
           description="Live forex rates from the European Central Bank reference fix. Updates daily on ECB business days. Weekend rates serve last Friday close."
           stats={[
-            { label: "Base Currency",  value: fx?.base ?? "USD",  color: "#00e676" },
-            { label: "Major Pairs",    value: pairCount,           color: "#0090f0" },
-            { label: "Last Fix",       value: date,                color: "#a78bfa" },
+            { label: "Base Currency", value: fx?.base ?? "USD", color: "#00e676" },
+            { label: "Major Pairs", value: pairCount, color: "#0090f0" },
+            { label: "Last Fix", value: date, color: "#a78bfa" },
           ]}
           isPremium={isPremium}
-          upgradeHref="/register?plan=alpha"
-          upgradeLabel="Unlock historical pairs"
+          upgradeHref="/pricing"
+          upgradeLabel="Unlock Historical Pairs + Cross Rates"
+          shouldShowUpgradeCTA={shouldShowUpgradeCTA(session)}
         />
       </ScrollReveal>
 

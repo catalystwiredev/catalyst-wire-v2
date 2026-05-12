@@ -6,15 +6,15 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Star, Building2, Zap } from "lucide-react";
 import { DashboardClient } from "./DashboardClient";
+import { tierAtLeast, shouldShowUpgradeCTA } from "@/lib/tier";
 
-export const revalidate = 120;
+export const dynamic = "force-dynamic";   // Live data philosophy
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const plan      = (session.user as any).plan ?? "free";
-  const isPremium = plan !== "free";
+  const isPremium = tierAtLeast(session, "alpha");
 
   const [catalysts, macroRaw, newsRaw] = await Promise.all([
     getCatalysts({ premiumOnly: false, limit: isPremium ? 50 : 10 }).catch(() => []),
@@ -22,23 +22,28 @@ export default async function DashboardPage() {
     getNews({ limit: 5 }).catch(() => []),
   ]);
 
+  const plan = (session.user as any).plan ?? "free";
   const planMeta: any = {
-    free:          { label: "Catalyst",      color: "var(--text-secondary)", icon: Zap },
-    alpha:         { label: "Alpha",         color: "var(--accent)",          icon: Star },
-    institutional: { label: "Institutional", color: "var(--gold)",            icon: Building2 },
+    free: { label: "Catalyst", color: "var(--text-secondary)", icon: Zap },
+    alpha: { label: "Alpha", color: "var(--accent)", icon: Star },
+    institutional: { label: "Institutional", color: "var(--gold)", icon: Building2 },
   };
-  const pm       = planMeta[plan] ?? planMeta.free;
+  const pm = planMeta[plan] ?? planMeta.free;
   const PlanIcon = pm.icon;
 
-  const bullish  = catalysts.filter((c: any) => (c.Verdict ?? c.verdict) === "Bullish").length;
-  const bearish  = catalysts.filter((c: any) => (c.Verdict ?? c.verdict) === "Bearish").length;
+  const bullish = catalysts.filter((c: any) => (c.Verdict ?? c.verdict) === "Bullish").length;
+  const bearish = catalysts.filter((c: any) => (c.Verdict ?? c.verdict) === "Bearish").length;
   const avgScore = catalysts.length
     ? Math.round((catalysts as any[]).reduce((a: number, c: any) => a + (c.ImpactScore ?? c.impactScore ?? 0), 0) / catalysts.length)
     : 0;
 
   const macro = macroRaw
     ? Object.entries(macroRaw).slice(0, 6).map(([id, s]: [string, any]) => ({
-        id, title: s?.title ?? id, value: s?.latestValue ?? null, units: s?.units ?? "", date: s?.latestDate ?? "",
+        id, 
+        title: s?.title ?? id, 
+        value: s?.latestValue ?? null, 
+        units: s?.units ?? "", 
+        date: s?.latestDate ?? "",
       }))
     : [];
 
@@ -56,11 +61,12 @@ export default async function DashboardPage() {
             </span>
           </div>
           <div style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-            {isPremium ? "Real-time feed active" : "Free plan — upgrade for real-time signals"}
+            {isPremium ? "Real-time feed active • Institutional features unlocked" : "Free plan — upgrade for real-time signals & more"}
           </div>
         </div>
+
         <div style={{ display: "flex", gap: 10 }}>
-          {!isPremium && (
+          {shouldShowUpgradeCTA(session) && (
             <Link href="/pricing" style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--accent)", color: "#fff", padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
               <Star size={13}/> Upgrade to Alpha
             </Link>
@@ -75,9 +81,9 @@ export default async function DashboardPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 12, marginBottom: 28 }}>
         {[
           { label: "Signals loaded", value: catalysts.length, color: "var(--accent)" },
-          { label: "Bullish",        value: bullish,          color: "var(--bull)" },
-          { label: "Bearish",        value: bearish,          color: "var(--bear)" },
-          { label: "Avg AI score",   value: avgScore,         color: "var(--neutral)" },
+          { label: "Bullish", value: bullish, color: "var(--bull)" },
+          { label: "Bearish", value: bearish, color: "var(--bear)" },
+          { label: "Avg AI score", value: avgScore, color: "var(--neutral)" },
         ].map(s => (
           <div key={s.label} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10, padding: "16px 20px" }}>
             <div style={{ fontSize: 26, fontWeight: 700, color: s.color, fontFamily: "monospace", marginBottom: 4 }}>{s.value}</div>
@@ -86,7 +92,12 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <DashboardClient catalysts={catalysts} macro={macro} news={newsRaw} isPremium={isPremium}/>
+      <DashboardClient 
+        catalysts={catalysts} 
+        macro={macro} 
+        news={newsRaw} 
+        isPremium={isPremium}
+      />
     </div>
   );
 }
