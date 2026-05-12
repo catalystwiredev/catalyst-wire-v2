@@ -1,56 +1,63 @@
 /**
  * Twelve Data — real-time and historical price data, supports stocks, FX, crypto, ETFs.
- * Free plan: 8 req/min, 800 req/day. WebSocket streaming on paid plans.
- *
+ * Secret: TWELVE-DATA-API-KEY (from Azure Key Vault)
  * Docs: https://twelvedata.com/docs
- * Key:  process.env.TWELVE_DATA_API_KEY (Key Vault: TWELVE-DATA-API-KEY)
  */
+import { getSecret } from "../azure-secrets";
 
 const BASE = "https://api.twelvedata.com";
 
-function key(): string {
-  return process.env.TWELVE_DATA_API_KEY ?? "";
+async function key(): Promise<string> {
+  return await getSecret("TWELVE-DATA-API-KEY");
 }
 
 export interface TDQuote {
-  symbol:   string;
-  name:     string;
+  symbol: string;
+  name: string;
   exchange: string;
   currency: string;
-  open:     number;
-  high:     number;
-  low:      number;
-  close:    number;
-  volume:   number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
   previous_close: number;
-  change:   number;
+  change: number;
   percent_change: number;
   is_market_open: boolean;
 }
 
 export async function getTwelveDataQuote(symbol: string): Promise<TDQuote | null> {
-  const apiKey = key();
-  if (!apiKey) { console.warn("[twelve-data] missing TWELVE_DATA_API_KEY"); return null; }
-
+  const apiKey = await key();
+  if (!apiKey) { 
+    console.warn("[twelve-data] missing TWELVE-DATA-API-KEY"); 
+    return null; 
+  }
   try {
     const res = await fetch(`${BASE}/quote?symbol=${encodeURIComponent(symbol.toUpperCase())}&apikey=${apiKey}`, {
       next: { revalidate: 30 },
     });
-    if (!res.ok) { console.error("[twelve-data] quote HTTP", res.status); return null; }
+    if (!res.ok) { 
+      console.error("[twelve-data] quote HTTP", res.status); 
+      return null; 
+    }
     const d = await res.json();
-    if (d.status === "error") { console.error("[twelve-data] error:", d.message); return null; }
+    if (d.status === "error") { 
+      console.error("[twelve-data] error:", d.message); 
+      return null; 
+    }
     return {
-      symbol:   d.symbol,
-      name:     d.name,
+      symbol: d.symbol,
+      name: d.name,
       exchange: d.exchange,
       currency: d.currency,
-      open:     parseFloat(d.open ?? "0"),
-      high:     parseFloat(d.high ?? "0"),
-      low:      parseFloat(d.low ?? "0"),
-      close:    parseFloat(d.close ?? "0"),
-      volume:   parseInt(d.volume ?? "0", 10),
+      open: parseFloat(d.open ?? "0"),
+      high: parseFloat(d.high ?? "0"),
+      low: parseFloat(d.low ?? "0"),
+      close: parseFloat(d.close ?? "0"),
+      volume: parseInt(d.volume ?? "0", 10),
       previous_close: parseFloat(d.previous_close ?? "0"),
-      change:         parseFloat(d.change ?? "0"),
+      change: parseFloat(d.change ?? "0"),
       percent_change: parseFloat(d.percent_change ?? "0"),
       is_market_open: !!d.is_market_open,
     };
@@ -60,7 +67,14 @@ export async function getTwelveDataQuote(symbol: string): Promise<TDQuote | null
   }
 }
 
-export interface TDBar { datetime: string; open: number; high: number; low: number; close: number; volume: number; }
+export interface TDBar { 
+  datetime: string; 
+  open: number; 
+  high: number; 
+  low: number; 
+  close: number; 
+  volume: number; 
+}
 
 export async function getTwelveDataTimeSeries(
   symbol: string,
@@ -68,11 +82,9 @@ export async function getTwelveDataTimeSeries(
   outputsize = 100,
   opts: { regularHoursOnly?: boolean } = {},
 ): Promise<TDBar[]> {
-  const apiKey = key();
+  const apiKey = await key();
   if (!apiKey) return [];
 
-  // Default to extended hours so pre-market and after-hours bars are included.
-  // Callers can opt back to regular hours via { regularHoursOnly: true }.
   const extendedHours = opts.regularHoursOnly ? "false" : "true";
 
   try {
@@ -85,12 +97,12 @@ export async function getTwelveDataTimeSeries(
     if (d.status === "error" || !d.values) return [];
     return d.values.map((v: { datetime: string; open: string; high: string; low: string; close: string; volume: string }) => ({
       datetime: v.datetime,
-      open:   parseFloat(v.open),
-      high:   parseFloat(v.high),
-      low:    parseFloat(v.low),
-      close:  parseFloat(v.close),
+      open: parseFloat(v.open),
+      high: parseFloat(v.high),
+      low: parseFloat(v.low),
+      close: parseFloat(v.close),
       volume: parseInt(v.volume, 10),
-    })).reverse();   // oldest -> newest
+    })).reverse(); // oldest -> newest
   } catch (err) {
     console.error("[twelve-data] time_series failed:", err);
     return [];

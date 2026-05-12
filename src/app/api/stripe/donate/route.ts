@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getSecret } from "@/lib/azure-secrets";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-04-22.dahlia" });
+  const stripeSecretKey = await getSecret("STRIPE-SECRET-KEY");
+
+  const stripe = new Stripe(stripeSecretKey, { 
+    apiVersion: "2026-04-22.dahlia" 
+  });
+
   try {
     const { amount = 1500 } = await req.json() as { amount?: number };
     const cents = Math.max(100, Math.min(amount, 1000000));
@@ -26,7 +32,7 @@ export async function POST(req: NextRequest) {
         },
       }],
       success_url: `${process.env.NEXTAUTH_URL}/donate?success=1`,
-      cancel_url:  `${process.env.NEXTAUTH_URL}/donate`,
+      cancel_url: `${process.env.NEXTAUTH_URL}/donate`,
       metadata: { type: "donation" },
     });
 

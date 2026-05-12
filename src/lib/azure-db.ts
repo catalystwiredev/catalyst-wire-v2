@@ -1,17 +1,77 @@
 import { Connection, Request, TYPES } from "tedious";
+import { DefaultAzureCredential } from "@azure/identity";
+import { SecretClient } from "@azure/keyvault-secrets";
 
-export function getConnection(): Promise<Connection> {
+// Cache secrets (they rarely change)
+let cachedSecrets: {
+  AZURE_SQL_SERVER?: string;
+  AZURE_SQL_USER?: string;
+  AZURE_SQL_PASSWORD?: string;
+  AZURE_SQL_DATABASE?: string;
+} | null = null;
+
+async function getSecretsFromKeyVault() {
+  if (cachedSecrets) return cachedSecrets;
+
+  try {
+    const credential = new DefaultAzureCredential();
+    const keyVaultUrl = process.env.AZURE_KEY_VAULT_URL!; // https://kv-catalystwire-prod.vault.azure.net/
+    const secretClient = new SecretClient(keyVaultUrl, credential);
+
+    const [server, user, password, database] = await Promise.all([
+      secretClient.getSecret("AZURE-SQL-SERVER"),
+      secretClient.getSecret("AZURE-SQL-USER"),
+      secretClient.getSecret("AZURE-SQL-PASSWORD"),
+      secretClient.getSecret("AZURE-SQL-DATABASE"),
+    ]);
+
+    cachedSecrets = {
+      AZURE_SQL_SERVER: server.value!,
+      AZURE_SQL_USER: user.value!,
+      AZURE_SQL_PASSWORD: password.value!,
+      AZURE_SQL_DATABASE: database.value!,
+    };
+
+    console.log("[azure-db] Secrets loaded from Key Vault");
+    return cachedSecrets;
+  } catch (err) {
+    console.error("[azure-db] Key Vault error:", err);
+    throw new Error("Failed to load database secrets from Key Vault");
+  }
+}
+
+export async function getConnection(): Promise<Connection> {
+  const secrets = await getSecretsFromKeyVault();
+
   return new Promise((resolve, reject) => {
     const conn = new Connection({
-      server: process.env.AZURE_SQL_SERVER!,
-      authentication: { type: "default" as const, options: { userName: process.env.AZURE_SQL_USER!, password: process.env.AZURE_SQL_PASSWORD! } },
-      options: { database: process.env.AZURE_SQL_DATABASE!, encrypt: true, trustServerCertificate: false, connectTimeout: 30000, requestTimeout: 30000 },
+      server: secrets.AZURE_SQL_SERVER!,
+      authentication: {
+        type: "default" as const,
+        options: {
+          userName: secrets.AZURE_SQL_USER!,
+          password: secrets.AZURE_SQL_PASSWORD!,
+        },
+      },
+      options: {
+        database: secrets.AZURE_SQL_DATABASE!,
+        encrypt: true,
+        trustServerCertificate: false,
+        connectTimeout: 30000,
+        requestTimeout: 30000,
+      },
     });
-    conn.on("connect", (err) => { if (err) reject(err); else resolve(conn); });
+
+    conn.on("connect", (err) => {
+      if (err) reject(err);
+      else resolve(conn);
+    });
+
     conn.connect();
   });
 }
 
+// ── Interfaces ─────────────────────────────────────────────────────────────
 export interface Catalyst {
   Ticker?: string; ticker?: string;
   EventType?: string; type?: string;
@@ -33,6 +93,31 @@ export interface UserRecord {
   stripe_subscription_id: string | null;
 }
 
+export interface Signal {
+  id: string;
+  symbol: string;
+  ts: string; // ISO 8601 UTC
+  direction: "UP" | "DOWN";
+  confidence: number; // 0-100
+  last_price: number;
+  mean_target: number;
+  pct_change: number; // signed
+  bull_range: number;
+  bear_range: number;
+  steps: number;
+  model: string;
+  created_at: string;
+}
+
+export interface WatchlistItem {
+  id: string;
+  symbol: string;
+  name: string | null;
+  asset_type: string;
+  added_at: string;
+}
+
+// ── Functions ─────────────────────────────────────────────────────────────
 export async function getCatalysts(opts: { premiumOnly?: boolean; limit?: number } = {}): Promise<Catalyst[]> {
   const { premiumOnly = false, limit = 50 } = opts;
   const conn = await getConnection();
@@ -55,12 +140,12 @@ export async function insertCatalyst(data: { ticker: string; eventType: string; 
       `INSERT INTO Catalysts (Ticker, EventType, Description, Verdict, ImpactScore, IsPremium) VALUES (@ticker, @eventType, @description, @verdict, @impactScore, @isPremium)`,
       (err) => { conn.close(); if (err) reject(err); else resolve(); }
     );
-    req.addParameter("ticker",      TYPES.NVarChar, data.ticker.toUpperCase());
-    req.addParameter("eventType",   TYPES.NVarChar, data.eventType);
+    req.addParameter("ticker", TYPES.NVarChar, data.ticker.toUpperCase());
+    req.addParameter("eventType", TYPES.NVarChar, data.eventType);
     req.addParameter("description", TYPES.NVarChar, data.description);
-    req.addParameter("verdict",     TYPES.NVarChar, data.verdict);
-    req.addParameter("impactScore", TYPES.Int,      Math.round(data.impactScore));
-    req.addParameter("isPremium",   TYPES.Bit,      data.isPremium ? 1 : 0);
+    req.addParameter("verdict", TYPES.NVarChar, data.verdict);
+    req.addParameter("impactScore", TYPES.Int, Math.round(data.impactScore));
+    req.addParameter("isPremium", TYPES.Bit, data.isPremium ? 1 : 0);
     conn.execSql(req);
   });
 }
@@ -101,9 +186,9 @@ export async function createUser(email: string, passwordHash: string, name: stri
       `INSERT INTO Users (email, password_hash, name, user_plan, plan_status) OUTPUT INSERTED.id VALUES (@email, @passwordHash, @name, 'free', 'active')`,
       (err) => { conn.close(); if (err) reject(err); else resolve(newId); }
     );
-    req.addParameter("email",        TYPES.NVarChar, email.toLowerCase().trim());
+    req.addParameter("email", TYPES.NVarChar, email.toLowerCase().trim());
     req.addParameter("passwordHash", TYPES.NVarChar, passwordHash);
-    req.addParameter("name",         TYPES.NVarChar, name || email.split("@")[0]);
+    req.addParameter("name", TYPES.NVarChar, name || email.split("@")[0]);
     req.on("row", (cols) => { newId = cols[0].value; });
     conn.execSql(req);
   });
@@ -116,9 +201,9 @@ export async function updateUserPlan(stripeCustomerId: string, plan: string, pla
       `UPDATE Users SET user_plan = @plan, plan_status = @planStatus, stripe_subscription_id = @subId, updated_at = GETUTCDATE() WHERE stripe_customer_id = @customerId`,
       (err) => { conn.close(); if (err) reject(err); else resolve(); }
     );
-    req.addParameter("plan",       TYPES.NVarChar, plan);
+    req.addParameter("plan", TYPES.NVarChar, plan);
     req.addParameter("planStatus", TYPES.NVarChar, planStatus);
-    req.addParameter("subId",      TYPES.NVarChar, subscriptionId || "");
+    req.addParameter("subId", TYPES.NVarChar, subscriptionId || "");
     req.addParameter("customerId", TYPES.NVarChar, stripeCustomerId);
     conn.execSql(req);
   });
@@ -132,7 +217,7 @@ export async function setStripeCustomerId(userId: string, stripeCustomerId: stri
       (err) => { conn.close(); if (err) reject(err); else resolve(); }
     );
     req.addParameter("customerId", TYPES.NVarChar, stripeCustomerId);
-    req.addParameter("id",         TYPES.UniqueIdentifier, userId);
+    req.addParameter("id", TYPES.UniqueIdentifier, userId);
     conn.execSql(req);
   });
 }
@@ -144,8 +229,8 @@ export async function saveContactMessage(name: string, email: string, subject: s
       `INSERT INTO ContactMessages (name, email, subject, message, created_at) VALUES (@name, @email, @subject, @message, GETUTCDATE())`,
       (err) => { conn.close(); if (err) reject(err); else resolve(); }
     );
-    req.addParameter("name",    TYPES.NVarChar, name.trim());
-    req.addParameter("email",   TYPES.NVarChar, email.toLowerCase().trim());
+    req.addParameter("name", TYPES.NVarChar, name.trim());
+    req.addParameter("email", TYPES.NVarChar, email.toLowerCase().trim());
     req.addParameter("subject", TYPES.NVarChar, subject.trim());
     req.addParameter("message", TYPES.NVarChar, message.trim());
     conn.execSql(req);
@@ -153,33 +238,17 @@ export async function saveContactMessage(name: string, email: string, subject: s
 }
 
 // ── Signals ────────────────────────────────────────────────────────────────
-export interface Signal {
-  id:           string;
-  symbol:       string;
-  ts:           string;        // ISO 8601 UTC
-  direction:    "UP" | "DOWN";
-  confidence:   number;        // 0-100
-  last_price:   number;
-  mean_target:  number;
-  pct_change:   number;        // signed
-  bull_range:   number;
-  bear_range:   number;
-  steps:        number;
-  model:        string;
-  created_at:   string;
-}
-
 export async function insertSignal(s: {
-  symbol:      string;
-  direction:   "UP" | "DOWN";
-  confidence:  number;
-  last_price:  number;
+  symbol: string;
+  direction: "UP" | "DOWN";
+  confidence: number;
+  last_price: number;
   mean_target: number;
-  pct_change:  number;
-  bull_range:  number;
-  bear_range:  number;
-  steps:       number;
-  model:       string;
+  pct_change: number;
+  bull_range: number;
+  bear_range: number;
+  steps: number;
+  model: string;
 }): Promise<string> {
   const conn = await getConnection();
   return new Promise((resolve, reject) => {
@@ -190,16 +259,16 @@ export async function insertSignal(s: {
        VALUES (@symbol, @direction, @confidence, @last_price, @mean_target, @pct_change, @bull_range, @bear_range, @steps, @model)`,
       (err) => { conn.close(); if (err) reject(err); else resolve(newId); }
     );
-    req.addParameter("symbol",      TYPES.NVarChar, s.symbol.toUpperCase());
-    req.addParameter("direction",   TYPES.NVarChar, s.direction);
-    req.addParameter("confidence",  TYPES.Int,      Math.max(0, Math.min(100, Math.round(s.confidence))));
-    req.addParameter("last_price",  TYPES.Float,    s.last_price);
-    req.addParameter("mean_target", TYPES.Float,    s.mean_target);
-    req.addParameter("pct_change",  TYPES.Float,    s.pct_change);
-    req.addParameter("bull_range",  TYPES.Float,    s.bull_range);
-    req.addParameter("bear_range",  TYPES.Float,    s.bear_range);
-    req.addParameter("steps",       TYPES.Int,      s.steps);
-    req.addParameter("model",       TYPES.NVarChar, s.model);
+    req.addParameter("symbol", TYPES.NVarChar, s.symbol.toUpperCase());
+    req.addParameter("direction", TYPES.NVarChar, s.direction);
+    req.addParameter("confidence", TYPES.Int, Math.max(0, Math.min(100, Math.round(s.confidence))));
+    req.addParameter("last_price", TYPES.Float, s.last_price);
+    req.addParameter("mean_target", TYPES.Float, s.mean_target);
+    req.addParameter("pct_change", TYPES.Float, s.pct_change);
+    req.addParameter("bull_range", TYPES.Float, s.bull_range);
+    req.addParameter("bear_range", TYPES.Float, s.bear_range);
+    req.addParameter("steps", TYPES.Int, s.steps);
+    req.addParameter("model", TYPES.NVarChar, s.model);
     req.on("row", (cols) => { newId = cols[0].value; });
     conn.execSql(req);
   });
@@ -217,7 +286,7 @@ export async function getRecentSignals(opts: { limit?: number; minConfidence?: n
        ORDER BY ts DESC`,
       (err) => { conn.close(); if (err) reject(err); else resolve(rows); }
     );
-    req.addParameter("limit",         TYPES.Int, Math.min(limit, 500));
+    req.addParameter("limit", TYPES.Int, Math.min(limit, 500));
     req.addParameter("minConfidence", TYPES.Int, minConfidence);
     req.on("row", (cols) => { const r: any = {}; cols.forEach((c: any) => { r[c.metadata.colName] = c.value; }); rows.push(r); });
     conn.execSql(req);
@@ -236,18 +305,10 @@ export async function getSignalsForSymbol(symbol: string, limit = 100): Promise<
       (err) => { conn.close(); if (err) reject(err); else resolve(rows); }
     );
     req.addParameter("symbol", TYPES.NVarChar, symbol.toUpperCase());
-    req.addParameter("limit",  TYPES.Int,      Math.min(limit, 1000));
+    req.addParameter("limit", TYPES.Int, Math.min(limit, 1000));
     req.on("row", (cols) => { const r: any = {}; cols.forEach((c: any) => { r[c.metadata.colName] = c.value; }); rows.push(r); });
     conn.execSql(req);
   });
-}
-
-export interface WatchlistItem {
-  id: string;
-  symbol: string;
-  name: string | null;
-  asset_type: string;
-  added_at: string;
 }
 
 export async function getWatchlist(userId: string): Promise<WatchlistItem[]> {
@@ -272,9 +333,9 @@ export async function addWatchlistItem(userId: string, symbol: string, name: str
        INSERT INTO Watchlists (user_id, symbol, name, asset_type, added_at) VALUES (@userId, @symbol, @name, @assetType, GETUTCDATE())`,
       (err) => { conn.close(); if (err) reject(err); else resolve(); }
     );
-    req.addParameter("userId",    TYPES.UniqueIdentifier, userId);
-    req.addParameter("symbol",    TYPES.NVarChar, symbol.toUpperCase().trim());
-    req.addParameter("name",      TYPES.NVarChar, name.trim());
+    req.addParameter("userId", TYPES.UniqueIdentifier, userId);
+    req.addParameter("symbol", TYPES.NVarChar, symbol.toUpperCase().trim());
+    req.addParameter("name", TYPES.NVarChar, name.trim());
     req.addParameter("assetType", TYPES.NVarChar, assetType);
     conn.execSql(req);
   });

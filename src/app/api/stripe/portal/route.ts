@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { auth } from "@/lib/auth";
 import { getUserById } from "@/lib/azure-db";
+import { getSecret } from "@/lib/azure-secrets";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+  const stripeSecretKey = await getSecret("STRIPE-SECRET-KEY");
+  const stripe = new Stripe(stripeSecretKey);
+
   try {
     const session = await auth();
     if (!session?.user) {
@@ -14,13 +17,14 @@ export async function POST() {
     }
 
     const userId = (session.user as { id?: string }).id;
-    const user   = userId ? await getUserById(userId).catch(() => null) : null;
+    const user = userId ? await getUserById(userId).catch(() => null) : null;
+
     if (!user?.stripe_customer_id) {
       return NextResponse.json({ error: "No billing account found." }, { status: 400 });
     }
 
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer:   user.stripe_customer_id,
+      customer: user.stripe_customer_id,
       return_url: `${process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL}/account`,
     });
 

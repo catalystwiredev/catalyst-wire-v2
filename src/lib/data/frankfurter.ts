@@ -1,22 +1,16 @@
-/**
- * Frankfurter API — real-time and historical forex rates from the European Central Bank.
- * No API key required. Updates daily on ECB business days (~16:00 CET).
- * Weekend rates: last available Friday close.
- *
- * Docs: https://www.frankfurter.app/docs
- */
+import { tierAtLeast } from "../tier";
 
 const BASE = "https://api.frankfurter.app";
 
 export interface FXRate {
-  base:   string;
-  date:   string;
-  rates:  Record<string, number>;
+  base: string;
+  date: string;
+  rates: Record<string, number>;
 }
 
 export interface FXHistoricalRate {
-  date:   string;
-  rate:   number;
+  date: string;
+  rate: number;
 }
 
 export interface FXCurrency {
@@ -24,7 +18,6 @@ export interface FXCurrency {
   name: string;
 }
 
-/** All available currency codes with full names. */
 export async function getFXCurrencies(): Promise<FXCurrency[]> {
   try {
     const res = await fetch(`${BASE}/currencies`, { next: { revalidate: 86400 } });
@@ -37,11 +30,6 @@ export async function getFXCurrencies(): Promise<FXCurrency[]> {
   }
 }
 
-/**
- * Latest rates for a base currency.
- * @param base    Source currency (default "USD")
- * @param targets Array of target currencies — omit for all ~32 ECB currencies
- */
 export async function getLatestRates(base = "USD", targets?: string[]): Promise<FXRate | null> {
   try {
     const params = new URLSearchParams({ from: base });
@@ -55,10 +43,6 @@ export async function getLatestRates(base = "USD", targets?: string[]): Promise<
   }
 }
 
-/**
- * Single cross rate between two currencies at latest ECB fix.
- * Returns null if either currency is unsupported.
- */
 export async function getCrossRate(from: string, to: string): Promise<number | null> {
   try {
     const res = await fetch(
@@ -74,15 +58,6 @@ export async function getCrossRate(from: string, to: string): Promise<number | n
   }
 }
 
-/**
- * Historical daily closing rates for a currency pair over a date range.
- * Returns array ordered oldest → newest.
- *
- * @param from     Start date "YYYY-MM-DD"
- * @param to       End date   "YYYY-MM-DD" (default today)
- * @param base     Base currency (default "USD")
- * @param target   Target currency (e.g. "EUR")
- */
 export async function getFXHistory(
   from: string,
   base = "USD",
@@ -107,7 +82,6 @@ export async function getFXHistory(
   }
 }
 
-/** Common major pairs snapshot — USD base vs EUR, GBP, JPY, CHF, CAD, AUD, CNY. */
 export async function getMajorPairs(): Promise<FXRate | null> {
   return getLatestRates("USD", ["EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "CNY", "MXN", "BRL"]);
 }

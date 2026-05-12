@@ -3,10 +3,10 @@ import { getSecret } from "./azure-secrets";
 
 const INDEX = "catalysts";
 
-let searchClient: SearchClient | null = null;
+let searchClient: SearchClient<any> | null = null;
 let indexClient: SearchIndexClient | null = null;
 
-async function getSearchClient(): Promise<SearchClient> {
+async function getSearchClient(): Promise<SearchClient<any>> {
   if (searchClient) return searchClient;
 
   const endpoint = await getSecret("AZURE-SEARCH-ENDPOINT");

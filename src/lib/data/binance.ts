@@ -1,48 +1,45 @@
 /**
  * Binance Public REST API — crypto quotes, OHLCV bars, 24h stats.
- * No API key required for public market data endpoints.
- * WebSocket streaming: use useBinanceTicker hook (client-side).
- *
- * Docs: https://binance-docs.github.io/apidocs/spot/en/
+ * No API key required for public market data.
+ * Tier gating will be enforced at the page/component level.
  */
-
 const BASE = "https://api.binance.com/api/v3";
 
 export interface BinanceTicker {
-  symbol:             string;
-  priceChange:        number;
+  symbol: string;
+  priceChange: number;
   priceChangePercent: number;
-  lastPrice:          number;
-  highPrice:          number;
-  lowPrice:           number;
-  volume:             number;     // base asset volume
-  quoteVolume:        number;     // quote asset volume (USD-equiv)
-  openPrice:          number;
-  count:              number;     // number of trades
+  lastPrice: number;
+  highPrice: number;
+  lowPrice: number;
+  volume: number;
+  quoteVolume: number;
+  openPrice: number;
+  count: number;
 }
 
 export interface BinanceKline {
-  openTime:  number;
-  open:      number;
-  high:      number;
-  low:       number;
-  close:     number;
-  volume:    number;
+  openTime: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
   closeTime: number;
 }
 
 export interface BinanceOrderBookEntry {
-  price:    number;
+  price: number;
   quantity: number;
 }
 
 export interface BinanceOrderBook {
   symbol: string;
-  bids:   BinanceOrderBookEntry[];
-  asks:   BinanceOrderBookEntry[];
+  bids: BinanceOrderBookEntry[];
+  asks: BinanceOrderBookEntry[];
 }
 
-/** 24-hour rolling window ticker statistics for one symbol (e.g. "BTCUSDT"). */
+/** 24-hour rolling window ticker statistics */
 export async function getBinanceTicker(symbol: string): Promise<BinanceTicker | null> {
   try {
     const res = await fetch(
@@ -52,16 +49,16 @@ export async function getBinanceTicker(symbol: string): Promise<BinanceTicker | 
     if (!res.ok) return null;
     const d = await res.json();
     return {
-      symbol:             d.symbol,
-      priceChange:        parseFloat(d.priceChange),
+      symbol: d.symbol,
+      priceChange: parseFloat(d.priceChange),
       priceChangePercent: parseFloat(d.priceChangePercent),
-      lastPrice:          parseFloat(d.lastPrice),
-      highPrice:          parseFloat(d.highPrice),
-      lowPrice:           parseFloat(d.lowPrice),
-      volume:             parseFloat(d.volume),
-      quoteVolume:        parseFloat(d.quoteVolume),
-      openPrice:          parseFloat(d.openPrice),
-      count:              d.count,
+      lastPrice: parseFloat(d.lastPrice),
+      highPrice: parseFloat(d.highPrice),
+      lowPrice: parseFloat(d.lowPrice),
+      volume: parseFloat(d.volume),
+      quoteVolume: parseFloat(d.quoteVolume),
+      openPrice: parseFloat(d.openPrice),
+      count: d.count,
     };
   } catch (err) {
     console.error("[binance] ticker failed:", symbol, err);
@@ -69,7 +66,7 @@ export async function getBinanceTicker(symbol: string): Promise<BinanceTicker | 
   }
 }
 
-/** Batch 24h tickers. Pass symbols=[] to get ALL symbols (heavy — ~2000 entries). */
+/** Batch 24h tickers (use sparingly) */
 export async function getBinanceTickers(symbols?: string[]): Promise<BinanceTicker[]> {
   try {
     const url = symbols?.length
@@ -80,16 +77,16 @@ export async function getBinanceTickers(symbols?: string[]): Promise<BinanceTick
     const data = await res.json();
     const arr = Array.isArray(data) ? data : [data];
     return arr.map((d: Record<string, string | number>) => ({
-      symbol:             d.symbol as string,
-      priceChange:        parseFloat(d.priceChange as string),
+      symbol: d.symbol as string,
+      priceChange: parseFloat(d.priceChange as string),
       priceChangePercent: parseFloat(d.priceChangePercent as string),
-      lastPrice:          parseFloat(d.lastPrice as string),
-      highPrice:          parseFloat(d.highPrice as string),
-      lowPrice:           parseFloat(d.lowPrice as string),
-      volume:             parseFloat(d.volume as string),
-      quoteVolume:        parseFloat(d.quoteVolume as string),
-      openPrice:          parseFloat(d.openPrice as string),
-      count:              d.count as number,
+      lastPrice: parseFloat(d.lastPrice as string),
+      highPrice: parseFloat(d.highPrice as string),
+      lowPrice: parseFloat(d.lowPrice as string),
+      volume: parseFloat(d.volume as string),
+      quoteVolume: parseFloat(d.quoteVolume as string),
+      openPrice: parseFloat(d.openPrice as string),
+      count: d.count as number,
     }));
   } catch (err) {
     console.error("[binance] tickers failed:", err);
@@ -97,10 +94,7 @@ export async function getBinanceTickers(symbols?: string[]): Promise<BinanceTick
   }
 }
 
-/**
- * OHLCV candlestick bars.
- * Interval: "1s"|"1m"|"3m"|"5m"|"15m"|"30m"|"1h"|"2h"|"4h"|"6h"|"8h"|"12h"|"1d"|"3d"|"1w"|"1M"
- */
+/** OHLCV candlestick bars */
 export async function getBinanceKlines(
   symbol: string,
   interval: "1m" | "3m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d" = "1m",
@@ -114,12 +108,12 @@ export async function getBinanceKlines(
     if (!res.ok) return [];
     const data: unknown[][] = await res.json();
     return data.map(k => ({
-      openTime:  k[0] as number,
-      open:      parseFloat(k[1] as string),
-      high:      parseFloat(k[2] as string),
-      low:       parseFloat(k[3] as string),
-      close:     parseFloat(k[4] as string),
-      volume:    parseFloat(k[5] as string),
+      openTime: k[0] as number,
+      open: parseFloat(k[1] as string),
+      high: parseFloat(k[2] as string),
+      low: parseFloat(k[3] as string),
+      close: parseFloat(k[4] as string),
+      volume: parseFloat(k[5] as string),
       closeTime: k[6] as number,
     }));
   } catch (err) {
@@ -128,7 +122,7 @@ export async function getBinanceKlines(
   }
 }
 
-/** Top-of-book best bid/ask + depth snapshot (default 20 levels). */
+/** Top-of-book order book */
 export async function getBinanceOrderBook(symbol: string, limit: 5 | 10 | 20 | 50 | 100 = 20): Promise<BinanceOrderBook | null> {
   try {
     const res = await fetch(
@@ -148,7 +142,7 @@ export async function getBinanceOrderBook(symbol: string, limit: 5 | 10 | 20 | 5
   }
 }
 
-/** Top USDT pairs sorted by 24h quote volume — useful for scanner/screener pages. */
+/** Top USDT pairs by volume */
 export async function getTopBinancePairs(limit = 20): Promise<BinanceTicker[]> {
   const all = await getBinanceTickers();
   return all
