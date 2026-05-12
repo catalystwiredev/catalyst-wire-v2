@@ -1,5 +1,6 @@
 "use client";
 import { useState, FormEvent } from "react";
+import Link from "next/link";
 import { Mail, MessageSquare, Send, CheckCircle, ExternalLink } from "lucide-react";
 
 const TOPICS = [
@@ -35,7 +36,6 @@ export default function ContactPage() {
         setSent(true);
       }
     } catch {
-      // Graceful fallback
       setSent(true);
     } finally {
       setLoading(false);
