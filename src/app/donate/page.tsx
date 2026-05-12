@@ -71,19 +71,19 @@ export default function DonatePage() {
 
         <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginBottom: 24 }}>
           {AMOUNTS.map((amt, i) => (
-            <button 
-              key={amt} 
+            <button
+              key={amt}
               onClick={() => setSelected(amt)}
-              style={{ 
-                padding: "8px 20px", 
-                borderRadius: 8, 
-                background: selected === amt ? "var(--bear)" : "var(--bg-elevated)", 
-                border: `1px solid ${selected === amt ? "var(--bear)" : "var(--border-medium)"}`, 
-                color: selected === amt ? "#fff" : "var(--text-primary)", 
-                fontSize: 14, 
-                fontWeight: 700, 
-                cursor: "pointer", 
-                transition: "all 0.15s" 
+              style={{
+                padding: "8px 20px",
+                borderRadius: 8,
+                background: selected === amt ? "var(--bear)" : "var(--bg-elevated)",
+                border: `1px solid ${selected === amt ? "var(--bear)" : "var(--border-medium)"}`,
+                color: selected === amt ? "#fff" : "var(--text-primary)",
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.15s"
               }}
             >
               {LABELS[i]}
@@ -93,28 +93,27 @@ export default function DonatePage() {
 
         {error && <p style={{ fontSize: 12, color: "var(--bear)", marginBottom: 12 }}>{error}</p>}
 
-        <button 
-          onClick={checkout} 
+        <button
+          onClick={checkout}
           disabled={loading}
-          style={{ 
-            display: "inline-flex", 
-            alignItems: "center", 
-            gap: 8, 
-            background: "var(--bear)", 
-            color: "#fff", 
-            padding: "12px 28px", 
-            borderRadius: 8, 
-            fontSize: 15, 
-            fontWeight: 700, 
-            cursor: loading ? "not-allowed" : "pointer", 
-            opacity: loading ? 0.7 : 1, 
-            border: "none" 
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            background: "var(--bear)",
+            color: "#fff",
+            padding: "12px 28px",
+            borderRadius: 8,
+            fontSize: 15,
+            fontWeight: 700,
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.7 : 1,
+            border: "none"
           }}
         >
           <Heart size={16}/>
           {loading ? "Redirecting to Stripe…" : `Donate ${LABELS[AMOUNTS.indexOf(selected)] ?? `$${(selected/100).toFixed(0)}`}`}
         </button>
-
         <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 12 }}>Processed securely via Stripe.</p>
       </div>
 

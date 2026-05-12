@@ -3,13 +3,15 @@ import { ExternalLink, BookOpen, Search, Globe, BarChart2, Newspaper, Database, 
 import { RESEARCH_SOURCES } from "@/lib/data/research-sources";
 import type { ResearchSource } from "@/lib/data/research-sources";
 
+export const dynamic = "force-dynamic";
+
 const CATEGORIES: { id: ResearchSource["category"]; label: string; icon: typeof BookOpen; desc: string }[] = [
-  { id: "news",      label: "Financial News",       icon: Newspaper, desc: "Real-time journalism and market-moving headlines" },
-  { id: "financial", label: "Stock Research",       icon: BarChart2, desc: "Ratings, valuations, earnings analysis, and price targets" },
-  { id: "data",      label: "Market Data",          icon: Database,  desc: "Raw financial data, economic series, and regulatory filings" },
-  { id: "industry",  label: "Industry Intelligence",icon: Search,    desc: "Market sizing, competitive landscape, and sector reports" },
-  { id: "academic",  label: "Academic Research",    icon: BookOpen,  desc: "Peer-reviewed finance papers and working papers — all free" },
-  { id: "global",    label: "Global Markets",       icon: Globe,     desc: "Country risk, trade data, and geopolitical market analysis" },
+  { id: "news", label: "Financial News", icon: Newspaper, desc: "Real-time journalism and market-moving headlines" },
+  { id: "financial", label: "Stock Research", icon: BarChart2, desc: "Ratings, valuations, earnings analysis, and price targets" },
+  { id: "data", label: "Market Data", icon: Database, desc: "Raw financial data, economic series, and regulatory filings" },
+  { id: "industry", label: "Industry Intelligence", icon: Search, desc: "Market sizing, competitive landscape, and sector reports" },
+  { id: "academic", label: "Academic Research", icon: BookOpen, desc: "Peer-reviewed finance papers and working papers" },
+  { id: "global", label: "Global Markets", icon: Globe, desc: "Country risk, trade data, and geopolitical market analysis" },
 ];
 
 const WORKFLOWS = [
@@ -22,13 +24,12 @@ const WORKFLOWS = [
 export default function ResearchPage() {
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 80px" }}>
-
       {/* Header */}
       <div style={{ marginBottom: 36 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 8 }}>Research Intelligence</div>
         <h1 style={{ fontSize: "clamp(22px,3vw,36px)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 10 }}>Research Hub</h1>
         <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: 640 }}>
-          Institutional-grade research resources curated for active investors and analysts. Free and premium sources covering news, fundamentals, academic finance, and global markets — all accessible without any university credentials.
+          Curated institutional-grade research resources for active investors and analysts. Free and premium sources covering news, fundamentals, academic finance, and global markets.
         </p>
       </div>
 

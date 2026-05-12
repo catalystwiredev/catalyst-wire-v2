@@ -45,9 +45,9 @@ export default function PrivacyPage() {
       <div style={{ marginBottom: 40 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 10 }}>Legal</div>
         <h1 style={{ fontSize: "clamp(24px,3vw,36px)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 10 }}>Privacy Policy</h1>
-        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Last updated: May 5, 2026</p>
+        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Last updated: May 12, 2026</p>
         <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8, marginTop: 14 }}>
-          This Privacy Policy explains how Catalyst Wire (&quot;we,&quot; &quot;us,&quot; &quot;our&quot;) collects, uses, and protects your personal information when you use our platform.
+          This Privacy Policy explains how Catalyst Wire ("we," "us," "our") collects, uses, and protects your personal information when you use our platform.
         </p>
       </div>
 
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
       </div>
 
       <div style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid var(--border)", display: "flex", gap: 24, flexWrap: "wrap" }}>
-        <Link href="/terms"   style={{ fontSize: 13, color: "var(--accent)", textDecoration: "none" }}>Terms of Service</Link>
+        <Link href="/terms" style={{ fontSize: 13, color: "var(--accent)", textDecoration: "none" }}>Terms of Service</Link>
         <Link href="/contact" style={{ fontSize: 13, color: "var(--accent)", textDecoration: "none" }}>Contact Us</Link>
       </div>
     </div>

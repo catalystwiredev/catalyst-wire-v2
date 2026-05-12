@@ -2,13 +2,16 @@ import Link from "next/link";
 import { ArrowRight, Crown } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { ThemesLive } from "./ThemesLive";
+import { tierAtLeast, shouldShowUpgradeCTA } from "@/lib/tier";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 async function getThemes() {
   try {
     const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const res = await fetch(`${base}/api/themes`, { next: { revalidate: 60 } });
+    const res = await fetch(`${base}/api/themes`, { 
+      cache: "no-store" 
+    });
     if (!res.ok) return [];
     const data = await res.json();
     return data.themes ?? [];
@@ -17,7 +20,8 @@ async function getThemes() {
 
 export default async function ThemesPage() {
   const [session, themes] = await Promise.all([auth(), getThemes()]);
-  const isPremium = (session?.user as { plan?: string } | undefined)?.plan !== "free";
+
+  const isPremium = tierAtLeast(session, "alpha");
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 72px" }}>
@@ -37,9 +41,7 @@ export default async function ThemesPage() {
           </Link>
         )}
       </div>
-
       <ThemesLive initialThemes={themes} isPremium={isPremium} />
     </div>
   );
 }
-

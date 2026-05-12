@@ -2,25 +2,25 @@ import Link from "next/link";
 import { Zap, Target, BookOpen, Heart, ArrowRight, Mail } from "lucide-react";
 
 const PILLARS = [
-  { 
-    icon: Zap, 
-    title: "Speed", 
-    body: "Market-moving catalysts are identified and scored in real time. We prioritize fresh data and low-latency pipelines." 
+  {
+    icon: Zap,
+    title: "Speed",
+    body: "Market-moving catalysts are identified and scored in real time. We prioritize fresh data and low-latency pipelines."
   },
-  { 
-    icon: Target, 
-    title: "Precision", 
-    body: "AI scoring + human-verified logic. Every catalyst is linked back to its original source (SEC filings, news, FDA, etc.)." 
+  {
+    icon: Target,
+    title: "Precision",
+    body: "AI scoring combined with transparent logic. Every catalyst links back to its original source."
   },
-  { 
-    icon: BookOpen, 
-    title: "Transparency", 
-    body: "No black boxes. Every signal shows the underlying data and reasoning so you can verify it yourself." 
+  {
+    icon: BookOpen,
+    title: "Transparency",
+    body: "No black boxes. You can always see the underlying data and reasoning behind each signal."
   },
-  { 
-    icon: Heart, 
-    title: "Accessibility", 
-    body: "Built for serious traders on any budget. Strong free tier + fair paid plans." 
+  {
+    icon: Heart,
+    title: "Accessibility",
+    body: "Institutional-grade tools built for traders on any budget. Strong free tier with fair paid plans."
   },
 ];
 
@@ -31,7 +31,9 @@ export default function AboutPage() {
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 12 }}>Our Story</div>
         <h1 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: 20 }}>
           Built by a trader.<br />
-          <span className="gradient-text">For every trader.</span>
+          <span style={{ background: "linear-gradient(135deg, #33b5ff, #00d97e)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            For every trader.
+          </span>
         </h1>
         <p style={{ fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.8, maxWidth: 640, marginBottom: 24 }}>
           Catalyst Wire was created because institutional traders had real-time catalyst intelligence while everyone else was left guessing. 
@@ -70,8 +72,8 @@ export default function AboutPage() {
             <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Angel Gomez</h3>
             <div style={{ fontSize: 13, color: "var(--accent)", marginBottom: 14 }}>Solo Developer & Active Trader</div>
             <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8 }}>
-              I built Catalyst Wire because I got tired of paying for fragmented, delayed, or low-quality catalyst tools. 
-              Everything you see here — from data ingestion to AI scoring to the UI — is written and maintained by me.
+              I built Catalyst Wire because I got tired of paying for fragmented, delayed, or low-quality catalyst tools.
+              Everything you see here is written and maintained by me.
             </p>
           </div>
         </div>

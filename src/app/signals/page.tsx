@@ -4,9 +4,9 @@ import { DataPageHeader } from '@/components/DataPageHeader'
 import { ScrollReveal } from '@/components/ScrollReveal'
 import { auth } from '@/lib/auth'
 import { SignalsClient } from './SignalsClient'
-import { tierAtLeast } from '@/lib/tier'
+import { tierAtLeast, shouldShowUpgradeCTA } from '@/lib/tier'
 
-export const revalidate = 30
+export const dynamic = "force-dynamic"
 
 export default async function SignalsPage() {
   const [session, signals] = await Promise.all([
@@ -15,11 +15,9 @@ export default async function SignalsPage() {
   ])
 
   const isAlphaOrHigher = tierAtLeast(session, 'alpha')
-
   const upCount = signals.filter((s) => s.direction === 'UP').length
   const downCount = signals.filter((s) => s.direction === 'DOWN').length
   const highConf = signals.filter((s) => s.confidence >= 70).length
-
   const visibleSignals = isAlphaOrHigher ? signals : signals.slice(0, 8)
 
   return (
@@ -42,6 +40,7 @@ export default async function SignalsPage() {
           isPremium={isAlphaOrHigher}
           upgradeHref="/pricing"
           upgradeLabel="Unlock Alpha for Live Stream + Full History"
+          shouldShowUpgradeCTA={shouldShowUpgradeCTA(session)}
         />
       </ScrollReveal>
 

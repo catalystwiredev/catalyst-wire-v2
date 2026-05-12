@@ -27,7 +27,7 @@ const SECTIONS = [
   },
   {
     title: "7. Disclaimer of Warranties",
-    body: `THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR THAT DATA WILL BE ACCURATE, COMPLETE, OR TIMELY. FINANCIAL MARKET DATA CAN BE DELAYED, INCORRECT, OR INCOMPLETE.`,
+    body: `THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR THAT DATA WILL BE ACCURATE, COMPLETE, OR TIMELY.`,
   },
   {
     title: "8. Limitation of Liability",
@@ -57,7 +57,7 @@ export default function TermsPage() {
       <div style={{ marginBottom: 40 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 10 }}>Legal</div>
         <h1 style={{ fontSize: "clamp(24px,3vw,36px)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 10 }}>Terms of Service</h1>
-        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Last updated: May 5, 2026</p>
+        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Last updated: May 12, 2026</p>
       </div>
 
       <div style={{ background: "var(--bear-dim)", border: "1px solid var(--bear-border)", borderRadius: 10, padding: "14px 18px", marginBottom: 36 }}>

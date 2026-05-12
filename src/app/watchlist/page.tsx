@@ -14,25 +14,32 @@ interface WatchlistItem {
 }
 
 const TYPE_COLORS: Record<AssetType, string> = {
-  stock: "var(--accent)", etf: "var(--bull)", crypto: "#f59e0b",
-  forex: "#a78bfa", futures: "#fb923c", option: "#ec4899",
+  stock: "var(--accent)", 
+  etf: "var(--bull)", 
+  crypto: "#f59e0b",
+  forex: "#a78bfa", 
+  futures: "#fb923c", 
+  option: "#ec4899",
 };
 
 export default function WatchlistPage() {
-  const [items,    setItems]    = useState<WatchlistItem[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [adding,   setAdding]   = useState(false);
-  const [symbol,   setSymbol]   = useState("");
-  const [name,     setName]     = useState("");
-  const [assetType,setAssetType]= useState<AssetType>("stock");
-  const [error,    setError]    = useState("");
+  const [items, setItems] = useState<WatchlistItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [symbol, setSymbol] = useState("");
+  const [name, setName] = useState("");
+  const [assetType, setAssetType] = useState<AssetType>("stock");
+  const [error, setError] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res  = await fetch("/api/watchlist");
-      if (res.status === 401) { setError("Please sign in to view your watchlist."); return; }
+      const res = await fetch("/api/watchlist");
+      if (res.status === 401) {
+        setError("Please sign in to view your watchlist.");
+        return;
+      }
       const data = await res.json();
       setItems(data.items ?? []);
     } catch {
@@ -44,28 +51,36 @@ export default function WatchlistPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Auto-refresh watchlist every 30 seconds — keeps the symbol list in sync if
-  // edited from another tab. Pauses when tab is hidden to save bandwidth.
+  // Auto-refresh every 30 seconds when tab is visible
   useEffect(() => {
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") void load();
-    }, 5_000);
+    }, 30_000);
     return () => clearInterval(interval);
   }, [load]);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!symbol.trim()) return;
+
     setAdding(true);
     setError("");
+
     try {
       const res = await fetch("/api/watchlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol: symbol.trim().toUpperCase(), name: name.trim(), assetType }),
+        body: JSON.stringify({ 
+          symbol: symbol.trim().toUpperCase(), 
+          name: name.trim(), 
+          assetType 
+        }),
       });
+
       if (!res.ok) throw new Error();
-      setSymbol(""); setName("");
+      
+      setSymbol("");
+      setName("");
       await load();
     } catch {
       setError("Failed to add symbol.");
@@ -94,7 +109,11 @@ export default function WatchlistPage() {
           <h1 style={{ fontSize: "clamp(22px,3vw,34px)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8 }}>Watchlist</h1>
           <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>Track symbols across stocks, ETFs, crypto, forex, futures, and options.</p>
         </div>
-        <button onClick={load} title="Refresh" style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--bg-elevated)", border: "1px solid var(--border-medium)", color: "var(--text-secondary)", padding: "8px 14px", borderRadius: 8, fontSize: 13, cursor: "pointer" }}>
+        <button 
+          onClick={load} 
+          title="Refresh" 
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--bg-elevated)", border: "1px solid var(--border-medium)", color: "var(--text-secondary)", padding: "8px 14px", borderRadius: 8, fontSize: 13, cursor: "pointer" }}
+        >
           <RefreshCw size={13}/> Refresh
         </button>
       </div>
@@ -103,24 +122,54 @@ export default function WatchlistPage() {
       <form onSubmit={handleAdd} style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 14, padding: "20px 22px", marginBottom: 24, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 5, flex: "1 1 100px", minWidth: 100 }}>
           <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Symbol</label>
-          <input value={symbol} onChange={e => setSymbol(e.target.value.toUpperCase())} placeholder="AAPL" required
-            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-medium)", borderRadius: 8, padding: "9px 12px", fontSize: 14, fontFamily: "monospace", fontWeight: 700, color: "var(--accent)", outline: "none", width: "100%" }}/>
+          <input 
+            value={symbol} 
+            onChange={e => setSymbol(e.target.value.toUpperCase())} 
+            placeholder="AAPL" 
+            required 
+            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-medium)", borderRadius: 8, padding: "9px 12px", fontSize: 14, fontFamily: "monospace", fontWeight: 700, color: "var(--accent)", outline: "none", width: "100%" }}
+          />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5, flex: "2 1 180px" }}>
           <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Name (optional)</label>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Apple Inc."
-            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-medium)", borderRadius: 8, padding: "9px 12px", fontSize: 14, color: "var(--text-primary)", outline: "none", width: "100%" }}/>
+          <input 
+            value={name} 
+            onChange={e => setName(e.target.value)} 
+            placeholder="Apple Inc."
+            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-medium)", borderRadius: 8, padding: "9px 12px", fontSize: 14, color: "var(--text-primary)", outline: "none", width: "100%" }}
+          />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5, flex: "1 1 120px" }}>
           <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Type</label>
-          <select value={assetType} onChange={e => setAssetType(e.target.value as AssetType)}
-            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-medium)", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "var(--text-primary)", outline: "none", cursor: "pointer" }}>
+          <select 
+            value={assetType} 
+            onChange={e => setAssetType(e.target.value as AssetType)}
+            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-medium)", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "var(--text-primary)", outline: "none", cursor: "pointer" }}
+          >
             {(["stock","etf","crypto","forex","futures","option"] as AssetType[]).map(t => (
               <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
             ))}
           </select>
         </div>
-        <button type="submit" disabled={adding} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--accent)", color: "#fff", border: "none", padding: "10px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: adding ? "not-allowed" : "pointer", opacity: adding ? 0.7 : 1, flexShrink: 0 }}>
+        <button 
+          type="submit" 
+          disabled={adding} 
+          style={{ 
+            display: "inline-flex", 
+            alignItems: "center", 
+            gap: 6, 
+            background: "var(--accent)", 
+            color: "#fff", 
+            border: "none", 
+            padding: "10px 18px", 
+            borderRadius: 8, 
+            fontSize: 13, 
+            fontWeight: 600, 
+            cursor: adding ? "not-allowed" : "pointer", 
+            opacity: adding ? 0.7 : 1, 
+            flexShrink: 0 
+          }}
+        >
           {adding ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }}/> : <Plus size={14}/>}
           Add
         </button>
@@ -146,7 +195,6 @@ export default function WatchlistPage() {
         </div>
       ) : (
         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-medium)", borderRadius: 14, overflow: "hidden" }}>
-          {/* Header */}
           <div style={{ display: "grid", gridTemplateColumns: "90px 1fr 100px 140px 44px", padding: "9px 18px", borderBottom: "1px solid var(--border)", background: "var(--bg-surface)" }}>
             {["Symbol", "Name", "Type", "Added", ""].map(h => (
               <div key={h} style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", color: "var(--text-muted)", textTransform: "uppercase" }}>{h}</div>
@@ -166,10 +214,23 @@ export default function WatchlistPage() {
                 <div style={{ fontFamily: "monospace", fontSize: 11, color: "var(--text-muted)" }}>
                   {new Date(item.added_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </div>
-                <button onClick={() => handleRemove(item.symbol)} disabled={deleting === item.symbol}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, background: "transparent", border: "1px solid var(--border-medium)", borderRadius: 6, cursor: "pointer", color: "var(--text-muted)", transition: "all 0.15s" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--bear)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--bear)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-medium)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)"; }}>
+                <button 
+                  onClick={() => handleRemove(item.symbol)} 
+                  disabled={deleting === item.symbol}
+                  style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center", 
+                    width: 30, 
+                    height: 30, 
+                    background: "transparent", 
+                    border: "1px solid var(--border-medium)", 
+                    borderRadius: 6, 
+                    cursor: "pointer", 
+                    color: "var(--text-muted)", 
+                    transition: "all 0.15s" 
+                  }}
+                >
                   {deleting === item.symbol ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }}/> : <Trash2 size={12}/>}
                 </button>
               </div>

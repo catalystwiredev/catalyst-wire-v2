@@ -35,7 +35,7 @@ export default function ContactPage() {
         setSent(true);
       }
     } catch {
-      // Graceful fallback – still show success to prevent spam probing
+      // Graceful fallback
       setSent(true);
     } finally {
       setLoading(false);
@@ -62,6 +62,9 @@ export default function ContactPage() {
         <p style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.7 }}>
           Thank you. I&apos;ll reply to <strong>{email || "your email"}</strong> within 24 hours.
         </p>
+        <Link href="/" style={{ marginTop: 24, display: "inline-flex", alignItems: "center", gap: 6, color: "var(--accent)", textDecoration: "none" }}>
+          ← Back to home
+        </Link>
       </div>
     );
   }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ScanLine, TrendingUp, Zap, ArrowRight, RefreshCw } from "lucide-react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { LiveBadge } from "@/components/LiveBadge";
+import { tierAtLeast, shouldShowUpgradeCTA } from "@/lib/tier";
 
 interface ScanResult {
   Ticker?: string; ticker?: string;
@@ -29,10 +30,10 @@ export default function ScannersPage() {
     "/api/scanners",
     { intervalMs: 5_000 }
   );
-  const results   = data.results ?? [];
+
+  const results = data.results ?? [];
   const generated = data.generated ?? "";
-  const loading   = isFetching && results.length === 0;
-  const load      = refresh;
+  const loading = isFetching && results.length === 0;
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 72px" }}>
@@ -60,12 +61,12 @@ export default function ScannersPage() {
               <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>AI-scored catalysts with live price data from Finnhub.</p>
             </div>
           </div>
-          <button onClick={load} disabled={loading} style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-elevated)", color: "var(--text-secondary)", padding: "7px 14px", borderRadius: 7, fontSize: 12, fontWeight: 600, border: "1px solid var(--border-medium)", cursor: "pointer" }}>
+          <button onClick={refresh} disabled={loading} style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-elevated)", color: "var(--text-secondary)", padding: "7px 14px", borderRadius: 7, fontSize: 12, fontWeight: 600, border: "1px solid var(--border-medium)", cursor: "pointer" }}>
             <RefreshCw size={12} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} /> Refresh
           </button>
         </div>
 
-        {loading ? (
+        {loading && results.length === 0 ? (
           <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)" }}>Loading live catalysts…</div>
         ) : results.length === 0 ? (
           <div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)" }}>No catalysts found. Scan again shortly.</div>
@@ -104,6 +105,7 @@ export default function ScannersPage() {
             </table>
           </div>
         )}
+
         {generated && <div style={{ padding: "8px 20px", fontSize: 10, color: "var(--text-muted)", borderTop: "1px solid var(--border)" }}>Last updated {new Date(generated).toLocaleTimeString()}</div>}
       </div>
 

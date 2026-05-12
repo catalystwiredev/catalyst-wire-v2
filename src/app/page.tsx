@@ -9,7 +9,7 @@ import { tierAtLeast } from "@/lib/tier";
 import Link from "next/link";
 import { Heart, ArrowRight } from "lucide-react";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const session = await auth();
@@ -39,7 +39,6 @@ export default async function HomePage() {
       <ScrollReveal delay={0}>
         <section style={{ padding:"0 24px 80px" }}>
           <div style={{ maxWidth:660, margin:"0 auto", position:"relative", overflow:"hidden", background:"rgba(8,14,26,0.75)", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", border:"1px solid rgba(255,61,87,0.18)", borderRadius:20, padding:"48px 40px", textAlign:"center" }}>
-            {/* Glow */}
             <div style={{ position:"absolute", top:-60, left:"50%", transform:"translateX(-50%)", width:300, height:200, background:"radial-gradient(circle, rgba(255,61,87,0.12) 0%, transparent 70%)", pointerEvents:"none", filter:"blur(30px)" }}/>
             <div style={{ position:"absolute", top:0, left:"20%", right:"20%", height:1, background:"linear-gradient(90deg, transparent, rgba(255,61,87,0.40), transparent)" }}/>
             <div style={{ position:"relative" }}>
@@ -70,7 +69,7 @@ export default async function HomePage() {
               catalyst<span style={{ color:"var(--accent)", textShadow:"0 0 12px rgba(0,144,240,0.5)" }}>wire</span>
             </span>
             <div style={{ fontSize:11, color:"var(--text-muted)", marginTop:5, lineHeight:1.5 }}>
-              © 2026 Catalyst Wire. For informational purposes only.<br/>Not financial advice. Past performance does not guarantee future results.
+              © 2026 Catalyst Wire. For informational purposes only.<br/>Not financial advice.
             </div>
           </div>
           <div style={{ display:"flex", gap:20, flexWrap:"wrap" }}>
