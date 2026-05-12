@@ -3,9 +3,10 @@ import Link from "next/link";
 import { DataPageHeader } from "@/components/DataPageHeader";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { auth } from "@/lib/auth";
+import { tierAtLeast, shouldShowUpgradeCTA } from "@/lib/tier";
 import { OptionsChainClient } from "./OptionsChainClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 interface Greeks { delta: number; gamma: number; theta: number; vega: number; rho: number; }
 interface OptionContract {
@@ -21,8 +22,10 @@ interface OptionChain {
 async function getChain(symbol: string, expiration?: string): Promise<OptionChain | null> {
   try {
     const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const url  = `${base}/api/options/${symbol}${expiration ? `?expiration=${encodeURIComponent(expiration)}` : ""}`;
-    const res  = await fetch(url, { next: { revalidate: 60 } });
+    const url = `${base}/api/options/${symbol}${expiration ? `?expiration=${encodeURIComponent(expiration)}` : ""}`;
+    const res = await fetch(url, { 
+      cache: "no-store" 
+    });
     if (!res.ok) return null;
     return await res.json();
   } catch { return null; }
@@ -32,18 +35,19 @@ export default async function OptionsSymbolPage({
   params,
   searchParams,
 }: {
-  params:        Promise<{ symbol: string }>;
-  searchParams:  Promise<{ expiration?: string }>;
+  params: Promise<{ symbol: string }>;
+  searchParams: Promise<{ expiration?: string }>;
 }) {
   const { symbol: rawSymbol } = await params;
   const { expiration } = await searchParams;
   const symbol = rawSymbol.toUpperCase();
 
   const [session, chain] = await Promise.all([auth(), getChain(symbol, expiration)]);
-  const isPremium = (session?.user as { plan?: string } | undefined)?.plan !== "free";
+
+  const isPremium = tierAtLeast(session, "alpha");
 
   const callCount = chain?.calls.length ?? 0;
-  const putCount  = chain?.puts.length  ?? 0;
+  const putCount = chain?.puts.length ?? 0;
 
   return (
     <div style={{ padding: "32px 24px", maxWidth: 1400, margin: "0 auto" }}>
@@ -59,14 +63,15 @@ export default async function OptionsSymbolPage({
             ? `Underlying $${chain.underlyingPrice.toFixed(2)} · ${chain.expirations.length} expiry dates · Black-Scholes Greeks computed in-app`
             : `Options chain unavailable for ${symbol}`}
           stats={[
-            { label: "Spot",       value: chain ? `$${chain.underlyingPrice.toFixed(2)}` : "—", color: "#0090f0" },
-            { label: "Calls",      value: callCount, color: "#00e676" },
-            { label: "Puts",       value: putCount,  color: "#ff4d4d" },
+            { label: "Spot", value: chain ? `$${chain.underlyingPrice.toFixed(2)}` : "—", color: "#0090f0" },
+            { label: "Calls", value: callCount, color: "#00e676" },
+            { label: "Puts", value: putCount, color: "#ff4d4d" },
             { label: "Expirations", value: chain?.expirations.length ?? 0, color: "#a78bfa" },
           ]}
           isPremium={isPremium}
-          upgradeHref="/register?plan=alpha"
-          upgradeLabel="Unlock IV surface"
+          upgradeHref="/pricing"
+          upgradeLabel="Unlock Full Options Intelligence"
+          shouldShowUpgradeCTA={shouldShowUpgradeCTA(session)}
         />
       </ScrollReveal>
 
