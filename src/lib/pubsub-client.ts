@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { WebPubSubClient } from "@azure/web-pubsub-client";
-import { tierAtLeast } from "@/lib/tier";
 
 export interface SignalEvent {
   type: "signal";
@@ -28,12 +27,6 @@ export function useSignalStream(maxBuffer = 100, symbol?: string) {
   const clientRef = useRef<WebPubSubClient | null>(null);
 
   useEffect(() => {
-    if (!tierAtLeast(null, "alpha")) {
-      setStatus("unauthorized");
-      setError("Live signals require Alpha or Institutional tier");
-      return;
-    }
-
     let cancelled = false;
 
     async function connect() {
@@ -43,10 +36,13 @@ export function useSignalStream(maxBuffer = 100, symbol?: string) {
       try {
         const negotiate = await fetch("/api/pubsub/negotiate", { method: "GET" });
         if (!negotiate.ok) {
-          const msg = negotiate.status === 401 
-            ? "Sign in required for live signals" 
-            : `Negotiation failed (${negotiate.status})`;
-          throw new Error(msg);
+          if (negotiate.status === 401) {
+            setStatus("unauthorized");
+            setError("Sign in required for live signals");
+            return;
+          }
+
+          throw new Error(`Negotiation failed (${negotiate.status})`);
         }
 
         const { url } = await negotiate.json() as { url: string };

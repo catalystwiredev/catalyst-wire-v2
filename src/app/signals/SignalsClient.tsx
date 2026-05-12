@@ -32,9 +32,10 @@ function relTime(iso: string): string {
 function StatusPill({ status }: { status: PubSubStatus }) {
   const map = {
     idle: { Icon: WifiOff, color: '#6a84a0', text: 'Offline' },
-    connecting: { Icon: Wifi, color: '#f59e0b', text: 'Connecting…' },
+    connecting: { Icon: Wifi, color: '#f59e0b', text: 'Connecting...' },
     connected: { Icon: Wifi, color: '#00e676', text: 'Live' },
     error: { Icon: AlertTriangle, color: '#ff4d4d', text: 'Error' },
+    unauthorized: { Icon: Lock, color: '#6a84a0', text: 'Locked' },
   } as const
 
   const { Icon, color, text } = map[status]
@@ -202,110 +203,32 @@ export function SignalsClient({
         >
           <thead>
             <tr>
-              <th
-                style={{
-                  textAlign: 'left',
-                  padding: '10px 16px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                Symbol
-              </th>
-              <th
-                style={{
-                  textAlign: 'left',
-                  padding: '10px 16px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                Direction
-              </th>
-              <th
-                style={{
-                  textAlign: 'right',
-                  padding: '10px 16px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                Confidence
-              </th>
-              <th
-                style={{
-                  textAlign: 'right',
-                  padding: '10px 16px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                Last
-              </th>
-              <th
-                style={{
-                  textAlign: 'right',
-                  padding: '10px 16px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                Target
-              </th>
-              <th
-                style={{
-                  textAlign: 'right',
-                  padding: '10px 16px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                Δ%
-              </th>
-              <th
-                style={{
-                  textAlign: 'right',
-                  padding: '10px 16px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                Range
-              </th>
-              <th
-                style={{
-                  textAlign: 'right',
-                  padding: '10px 16px',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                When
-              </th>
+              {[
+                'Symbol',
+                'Direction',
+                'Confidence',
+                'Last',
+                'Target',
+                'Δ%',
+                'Range',
+                'When',
+              ].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    textAlign:
+                      h === 'Symbol' || h === 'Direction' ? 'left' : 'right',
+                    padding: '10px 16px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
               <th style={{ width: 40 }} />
             </tr>
           </thead>
@@ -356,10 +279,6 @@ export function SignalsClient({
                         s.confidence >= 70
                           ? '#f59e0b'
                           : 'var(--text-secondary)',
-                      textShadow:
-                        s.confidence >= 70
-                          ? '0 0 10px rgba(245,158,11,0.4)'
-                          : 'none',
                     }}
                   >
                     {s.confidence}%

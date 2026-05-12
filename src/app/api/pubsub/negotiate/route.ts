@@ -23,15 +23,15 @@ export async function GET() {
     const ws = new WebPubSubServiceClient(conn, "signals");
     const token = await ws.getClientAccessToken({
       userId,
-      roles: ["webpubsub.joinLeaveGroup", "webpubsub.sendToGroup"],
+      roles: ["webpubsub.joinLeaveGroup"],
       expirationTimeInMinutes: 60,
     });
 
     return NextResponse.json({ url: token.url });
   } catch (err) {
     console.error("[pubsub/negotiate] failed:", err);
-    return NextResponse.json({ 
-      error: "Could not negotiate Web PubSub token" 
+    return NextResponse.json({
+      error: "Could not negotiate Web PubSub token"
     }, { status: 500 });
   }
 }
