@@ -2,25 +2,31 @@ import Link from "next/link";
 import { Zap, Target, BookOpen, Heart, ArrowRight, Mail } from "lucide-react";
 
 const PILLARS = [
-  { icon: Zap,      title: "Speed",          body: "Market-moving catalysts surface and expire in minutes. Every second of delay is alpha left on the table. We engineered for sub-second detection." },
-  { icon: Target,   title: "Precision",      body: "Raw filings mean nothing without context. Our AI pipeline scores, categorizes, and cross-references every event against historical outcomes." },
-  { icon: BookOpen, title: "Transparency",   body: "Every score links to its source. We tell you exactly which SEC form, earnings transcript, or congressional disclosure triggered the signal." },
-  { icon: Heart,    title: "Accessibility",  body: "Institutional-grade intelligence shouldn't require institutional budgets. We built the free tier we wished existed when we started trading." },
-];
-
-const TIMELINE = [
-  { date: "2024 Q3", event: "Idea born — frustrated by scattered, expensive data during a biotech PDUFA event." },
-  { date: "2024 Q4", event: "First prototype parsing SEC EDGAR filings with keyword scoring." },
-  { date: "2025 Q1", event: "Azure SQL + Web PubSub backend wired up. TradingView integration live." },
-  { date: "2025 Q2", event: "Congressional trades + FDA calendar pipelines deployed. Private beta launched." },
-  { date: "2025 Q4", event: "Public launch. Stripe monetization. 12,000+ instruments covered." },
-  { date: "2026 →",  event: "AI conviction v2, real-time news NLP, options flow integration, and global macro signals." },
+  { 
+    icon: Zap, 
+    title: "Speed", 
+    body: "Market-moving catalysts are identified and scored in real time. We prioritize fresh data and low-latency pipelines." 
+  },
+  { 
+    icon: Target, 
+    title: "Precision", 
+    body: "AI scoring + human-verified logic. Every catalyst is linked back to its original source (SEC filings, news, FDA, etc.)." 
+  },
+  { 
+    icon: BookOpen, 
+    title: "Transparency", 
+    body: "No black boxes. Every signal shows the underlying data and reasoning so you can verify it yourself." 
+  },
+  { 
+    icon: Heart, 
+    title: "Accessibility", 
+    body: "Built for serious traders on any budget. Strong free tier + fair paid plans." 
+  },
 ];
 
 export default function AboutPage() {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "48px 24px 80px" }}>
-
       <div style={{ marginBottom: 60 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: "var(--accent)", textTransform: "uppercase", marginBottom: 12 }}>Our Story</div>
         <h1 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: 20 }}>
@@ -28,7 +34,8 @@ export default function AboutPage() {
           <span className="gradient-text">For every trader.</span>
         </h1>
         <p style={{ fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.8, maxWidth: 640, marginBottom: 24 }}>
-          Catalyst Wire was born from a simple frustration: institutional desks had real-time catalyst feeds. Retail traders had Twitter and hope. That gap was unacceptable — so we built the tool to close it.
+          Catalyst Wire was created because institutional traders had real-time catalyst intelligence while everyone else was left guessing. 
+          I built this platform as a solo developer and active trader to close that gap.
         </p>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <Link href="/register" style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--accent)", color: "#fff", padding: "10px 22px", borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
@@ -61,38 +68,23 @@ export default function AboutPage() {
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Founder & Developer</div>
             <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Angel Gomez</h3>
-            <div style={{ fontSize: 13, color: "var(--accent)", marginBottom: 14 }}>Founder · Full-Stack Developer · Active Trader</div>
-            <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 16 }}>
-              I&apos;m a solo developer and active trader who built Catalyst Wire because the tools I wanted didn&apos;t exist at a price I could afford. I handle everything — architecture, data pipelines, front-end design, AI scoring, DevOps, and customer support.
-            </p>
+            <div style={{ fontSize: 13, color: "var(--accent)", marginBottom: 14 }}>Solo Developer & Active Trader</div>
             <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8 }}>
-              Catalyst Wire runs on Azure infrastructure, SEC EDGAR public APIs, OpenFDA, Finnhub, and a custom AI scoring pipeline for real-time event detection. Every dollar of revenue goes directly back into more data sources, faster infrastructure, and better features.
+              I built Catalyst Wire because I got tired of paying for fragmented, delayed, or low-quality catalyst tools. 
+              Everything you see here — from data ingestion to AI scoring to the UI — is written and maintained by me.
             </p>
           </div>
         </div>
       </div>
 
-      <div style={{ marginBottom: 56 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 28 }}>How we got here</h2>
-        <div style={{ borderLeft: "2px solid var(--border-medium)", paddingLeft: 24, display: "flex", flexDirection: "column", gap: 24 }}>
-          {TIMELINE.map(({ date, event }) => (
-            <div key={date} style={{ position: "relative" }}>
-              <div style={{ position: "absolute", left: -31, top: 4, width: 10, height: 10, borderRadius: "50%", background: "var(--accent)", border: "2px solid var(--bg-base)" }}/>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", letterSpacing: "0.06em", marginBottom: 4 }}>{date}</div>
-              <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6 }}>{event}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       <div style={{ textAlign: "center", background: "linear-gradient(135deg, rgba(0,153,255,0.08), rgba(0,230,118,0.05))", border: "1px solid rgba(0,153,255,0.18)", borderRadius: 16, padding: "40px 32px" }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 10 }}>Join the platform</h2>
+        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 10 }}>Ready to trade smarter?</h2>
         <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 24, lineHeight: 1.7 }}>
-          Start with the free tier. No card needed. Upgrade when the signals prove their worth.
+          Start with the free tier. No credit card required.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <Link href="/register" style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--accent)", color: "#fff", padding: "11px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
-            Start free trial <ArrowRight size={14}/>
+            Start free <ArrowRight size={14}/>
           </Link>
           <Link href="/donate" style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--bear-dim)", color: "var(--bear)", border: "1px solid var(--bear-border)", padding: "11px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
             <Heart size={14}/> Support the project
