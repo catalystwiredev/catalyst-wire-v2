@@ -1,29 +1,35 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
+import { getSecret } from "./azure-secrets";
 
-function getClient() {
-  const conn = process.env.AZURE_COMMUNICATION_CONNECTION_STRING;
-  if (!conn) throw new Error("AZURE_COMMUNICATION_CONNECTION_STRING not set");
-  return new EmailClient(conn);
+let emailClient: EmailClient | null = null;
+
+async function getClient(): Promise<EmailClient> {
+  if (emailClient) return emailClient;
+
+  const connString = await getSecret("AZURE-COMMUNICATION-CONNECTION-STRING");
+  emailClient = new EmailClient(connString);
+  return emailClient;
 }
 
-const FROM = process.env.AZURE_EMAIL_FROM ?? "noreply@catalystwire.com";
-const SITE = process.env.NEXTAUTH_URL      ?? "https://catalyst-wire.azurewebsites.net";
+const SITE = process.env.NEXTAUTH_URL ?? "https://catalyst-wire.azurewebsites.net";
 
 export async function sendContactNotification(opts: {
-  name:    string;
-  email:   string;
+  name: string;
+  email: string;
   subject: string;
   message: string;
 }): Promise<void> {
-  const client  = getClient();
-  const poller  = await client.beginSend({
-    senderAddress: FROM,
+  const client = await getClient();
+  const from = (await getSecret("AZURE-EMAIL-FROM")) ?? "noreply@catalystwire.com";
+
+  const poller = await client.beginSend({
+    senderAddress: from,
     recipients: {
       to: [{ address: "catalystwiredev@gmail.com", displayName: "Catalyst Wire" }],
     },
     replyTo: [{ address: opts.email, displayName: opts.name }],
     content: {
-      subject:   `[Contact] ${opts.subject} — from ${opts.name}`,
+      subject: `[Contact] ${opts.subject} — from ${opts.name}`,
       plainText: `Name: ${opts.name}\nEmail: ${opts.email}\n\n${opts.message}`,
       html: `
         <div style="font-family:monospace;background:#050810;color:#e0e0e0;padding:24px;border-radius:8px;max-width:600px">
@@ -45,16 +51,18 @@ export async function sendContactNotification(opts: {
 }
 
 export async function sendWelcomeEmail(opts: {
-  name:  string;
+  name: string;
   email: string;
-  plan:  string;
+  plan: string;
 }): Promise<void> {
-  const client = getClient();
+  const client = await getClient();
+  const from = (await getSecret("AZURE-EMAIL-FROM")) ?? "noreply@catalystwire.com";
+
   await client.beginSend({
-    senderAddress: FROM,
+    senderAddress: from,
     recipients: { to: [{ address: opts.email, displayName: opts.name }] },
     content: {
-      subject:   "Welcome to Catalyst Wire",
+      subject: "Welcome to Catalyst Wire",
       plainText: `Hi ${opts.name},\n\nYour account is ready. Sign in at ${SITE}/login\n\nPlan: ${opts.plan}\n\n— Catalyst Wire`,
       html: `
         <div style="font-family:monospace;background:#050810;color:#e0e0e0;padding:32px;border-radius:8px;max-width:580px">
@@ -72,19 +80,22 @@ export async function sendWelcomeEmail(opts: {
 }
 
 export async function sendCatalystAlert(opts: {
-  email:       string;
-  ticker:      string;
-  verdict:     string;
-  score:       number;
-  summary:     string;
+  email: string;
+  ticker: string;
+  verdict: string;
+  score: number;
+  summary: string;
 }): Promise<void> {
-  const client = getClient();
-  const color  = opts.verdict === "Bullish" ? "#00e676" : opts.verdict === "Bearish" ? "#ff3d57" : "#888";
+  const client = await getClient();
+  const from = (await getSecret("AZURE-EMAIL-FROM")) ?? "noreply@catalystwire.com";
+
+  const color = opts.verdict === "Bullish" ? "#00e676" : opts.verdict === "Bearish" ? "#ff3d57" : "#888";
+
   await client.beginSend({
-    senderAddress: FROM,
+    senderAddress: from,
     recipients: { to: [{ address: opts.email }] },
     content: {
-      subject:   `[${opts.verdict.toUpperCase()}] $${opts.ticker} — Score ${opts.score}/100`,
+      subject: `[${opts.verdict.toUpperCase()}] $${opts.ticker} — Score ${opts.score}/100`,
       plainText: `$${opts.ticker} catalyst alert\nVerdict: ${opts.verdict}\nScore: ${opts.score}/100\n\n${opts.summary}\n\nView on Catalyst Wire: ${SITE}/live-catalysts`,
       html: `
         <div style="font-family:monospace;background:#050810;color:#e0e0e0;padding:24px;border-radius:8px;max-width:560px">
